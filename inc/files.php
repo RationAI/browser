@@ -4,6 +4,12 @@ if (!defined('ROOT_FOLDER')) {
     define('ROOT_FOLDER', '.');
 }
 
+//VIEWER config
+$dzi_image_server = "";
+$viewer_url = "";
+
+
+
 // Default language
 $lang = 'en';
 
@@ -81,10 +87,14 @@ $GLOBALS['exclude_folders'] = array(
         '.git'
 );
 
+
+
+
 // include user config php file
 if (defined('FM_CONFIG') && is_file(FM_CONFIG) ) {
     include(FM_CONFIG);
 }
+
 
 //--- EDIT BELOW CAREFULLY OR DO NOT EDIT AT ALL
 
@@ -1301,10 +1311,14 @@ $all_files_size = 0;
             $fullpath = $path . '/' . $f;
             $is_link = is_link($fullpath);
             $ext = pathinfo($f, PATHINFO_EXTENSION);
+            $actions = "";
 
             $img = "";
             if (strtolower($ext) === "tiff" || strtolower($ext) === "tif") {
-                $img = "<img style='width: 150px;' class='mr-1' src=\"$image_server?Deepzoom=${fullpath}_files/0/0_0.jpg\"/>";
+                $img = "<img style='width: 150px;' class='mr-1' src=\"$dzi_image_server?Deepzoom=${fullpath}_files/0/0_0.jpg\"/>";
+
+                $actions="<a onclick=\"go(false, '$f', '$fullpath');\">Open in viewer.</a>";
+
             } else {
                 $img = $is_link ? 'fa fa-file-text-o' : fm_get_file_icon_class($path . '/' . $f);
                 $img = "<i class=\"$img\"></i>&nbsp;";
@@ -1327,7 +1341,18 @@ $all_files_size = 0;
             ?>
             <tr>
                 <?php if (!FM_READONLY): ?><td><label><input type="checkbox" name="file[]" value="<?php echo fm_enc($f) ?>"></label></td><?php endif; ?>
-                <td><div class="filename"><a href="<?php echo $filelink ?>" title="File info"><?php echo $img ?><?php echo fm_convert_win($f) ?></a><?php echo ($is_link ? ' &rarr; <i>' . readlink($path . '/' . $f) . '</i>' : '') ?></div></td>
+                <td style="display:flex; flex-direction: row">
+                    <div class="icon-conatiner" onclick="location.href = '<?php echo $filelink ?>';">
+                        <?php echo $img ?>
+
+                    </div>
+                    <div class="action-container" style="display: flex; flex-direction: column">
+                        <div class="filename"><a href="<?php echo $filelink ?>" title="File info"><?php echo fm_convert_win($f) ?></a><?php echo ($is_link ? ' &rarr; <i>' . readlink($path . '/' . $f) . '</i>' : '') ?></div>
+                        <div class="viewer-actions">
+                            <?php echo $actions ?>
+                        </div>
+                    </div>
+                </td>
                 <td><span title="<?php printf('%s bytes', $filesize_raw) ?>"><?php echo $filesize ?></span></td>
                 <td><?php echo $modif ?></td>
                 <?php if (!FM_IS_WIN): ?>
@@ -2218,8 +2243,14 @@ global $lang, $assets_path, $js_path;
         <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.2.0/styles/<?php echo FM_HIGHLIGHTJS_STYLE ?>.min.css">
     <?php endif; ?>
 
+    <script type="text/javascript" src="<?php echo $js_path ?>/viewerRun.js"></script>
+
 </head>
 <body>
+
+<form method="POST" action="<?php echo $viewer_url ?>"  id="redirect" style="display: none;">
+    <input type="hidden" name="visualisation" id="visualisation" value=''>
+</form>
 
 <div id="wrapper">
 

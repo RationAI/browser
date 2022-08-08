@@ -8,11 +8,6 @@ var user_settings = {
     visualizations: []
 };
 
-function setup(id) {
-
-}
-
-
 
 function moveTo(id) {
     var elmnt = document.getElementById(id);

@@ -79,4 +79,7 @@ $GLOBALS['exclude_folders'] = array(
     '.git', 'iipimage-martin'
 );
 
-$image_server = "https://rationai-vis.ics.muni.cz/iipsrv-martin/iipsrv.fcgi";
+
+// VIEWER CONF
+$dzi_image_server = "https://rationai-vis.ics.muni.cz/iipsrv-martin/iipsrv.fcgi";
+$viewer_url = "https://rationai-vis.ics.muni.cz/visualization/refactor/client/index.php";
