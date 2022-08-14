@@ -1,5 +1,6 @@
 <?php
 
-define('FM_CONFIG', 'config.php');
+define('PATH_TO_IS_MANAGER', './is/');
 
-require './inc/files.php';
+define('FM_CONFIG', PATH_TO_IS_MANAGER . 'config.php');
+require PATH_TO_IS_MANAGER . 'inc/files.php';

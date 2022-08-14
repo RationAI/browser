@@ -1,6 +1,6 @@
 <?php
 
-define('ROOT_FOLDER', '.');
+define('ROOT_FOLDER', PATH_TO_IS_MANAGER);
 
 // Default language
 $lang = 'en';
@@ -41,11 +41,11 @@ $toMailId = ""; //yourmailid@mail.com
 $default_timezone = 'Europe/Prague'; // UTC
 
 // Root path for file manager
-$root_path = '../../';
+$root_path = '../';
 
 // Root url for links in file manager.Relative to $http_host. Variants: '', 'path/to/subfolder'
 // Will not working if $root_path will be outside of server document root
-$root_url = '';
+$root_url = ROOT_FOLDER;
 
 // Server hostname. Can set manually if wrong
 $http_host = $_SERVER['HTTP_HOST'];
@@ -76,7 +76,7 @@ $js_path = ROOT_FOLDER . '/js';
 
 //Array of folders excluded from listing
 $GLOBALS['exclude_folders'] = array(
-    '.git', 'iipimage-martin'
+    '.git', 'iipimage-martin', 'is',
 );
 
 

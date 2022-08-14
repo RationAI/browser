@@ -62,13 +62,18 @@ function loadFormData(newTab, title, image, ...dataArray) {
         dataReference: 0,
         lossless: false
     });
-    let index = 0;
-    for (let item of dataArray) {
-        item.shader.dataReferences = [user_settings.data.length];
-        user_settings.data.push(item.data);
-        vis.shaders[index++] = item.shader;
+
+    if (dataArray.length < 1) {
+        delete user_settings.visualizations;
+    } else {
+        let index = 0;
+        for (let item of dataArray) {
+            item.shader.dataReferences = [user_settings.data.length];
+            user_settings.data.push(item.data);
+            vis.shaders[index++] = item.shader;
+        }
+        user_settings.visualizations.push(vis);
     }
-    user_settings.visualizations.push(vis);
 
     document.getElementById("visualisation").value = JSON.stringify(user_settings);
     if (newTab) {

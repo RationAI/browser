@@ -1,9 +1,5 @@
 <?php
 
-if (!defined('ROOT_FOLDER')) {
-    define('ROOT_FOLDER', '.');
-}
-
 //VIEWER config
 $dzi_image_server = "";
 $viewer_url = "";
@@ -70,30 +66,27 @@ $upload_extensions = ''; // 'gif,png,jpg'
 // show or hide the left side tree view
 $show_tree_view = true;
 
-// where are php files to look for
-$php_path = ROOT_FOLDER . '/inc';
-
-// absolute path to this script
-$file_path = $php_path . '/files.php';
-
-// where are assets to look for
-$assets_path = ROOT_FOLDER . '/assets';
-
-// where are js files to look for
-$js_path = ROOT_FOLDER . '/js';
-
 //Array of folders excluded from listing
 $GLOBALS['exclude_folders'] = array(
         '.git'
 );
 
-
-
-
 // include user config php file
 if (defined('FM_CONFIG') && is_file(FM_CONFIG) ) {
     include(FM_CONFIG);
 }
+
+// where are php files to look for
+$php_path = $root_url . '/inc';
+
+// absolute path to this script
+$file_path = $root_url . '/files.php';
+
+// where are assets to look for
+$assets_path = $root_url . '/assets';
+
+// where are js files to look for
+$js_path = $root_url . '/js';
 
 
 //--- EDIT BELOW CAREFULLY OR DO NOT EDIT AT ALL
@@ -1315,9 +1308,9 @@ $all_files_size = 0;
 
             $img = "";
             if (strtolower($ext) === "tiff" || strtolower($ext) === "tif") {
-                $img = "<img style='width: 150px;' class='mr-1' src=\"$dzi_image_server?Deepzoom=${fullpath}_files/0/0_0.jpg\"/>";
+                $img = "<img class='mr-1 tiff-preview' src=\"$dzi_image_server?Deepzoom=${fullpath}_files/0/0_0.jpg\"/>";
 
-                $actions="<a onclick=\"go(false, '$f', '$fullpath');\">Open in viewer.</a>";
+                $actions="<a onclick=\"go(false, '$f', '$fullpath');\" class='pointer'>Open in viewer.</a>";
 
             } else {
                 $img = $is_link ? 'fa fa-file-text-o' : fm_get_file_icon_class($path . '/' . $f);
@@ -1348,7 +1341,7 @@ $all_files_size = 0;
                     </div>
                     <div class="action-container" style="display: flex; flex-direction: column">
                         <div class="filename"><a href="<?php echo $filelink ?>" title="File info"><?php echo fm_convert_win($f) ?></a><?php echo ($is_link ? ' &rarr; <i>' . readlink($path . '/' . $f) . '</i>' : '') ?></div>
-                        <div class="viewer-actions">
+                        <div class="viewer-actions hover-visible-only">
                             <?php echo $actions ?>
                         </div>
                     </div>
@@ -2224,7 +2217,7 @@ header("Expires: Sat, 26 Jul 1997 05:00:00 GMT");
 header("Cache-Control: no-store, no-cache, must-revalidate, post-check=0, pre-check=0");
 header("Pragma: no-cache");
 
-global $lang, $assets_path, $js_path;
+global $lang, $assets_path, $js_path, $viewer_url;
 ?>
     <!DOCTYPE html>
 <html data-color-mode="auto" data-light-theme="light" data-dark-theme="dark_dimmed">

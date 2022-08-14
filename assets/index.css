@@ -88,6 +88,9 @@ tr:hover td {
     background-color: var(--color-bg-tertiary)
 }
 
+.pointer {
+    cursor: pointer;
+}
 
 
 .table {
@@ -105,6 +108,26 @@ tr:hover td {
     vertical-align: bottom;
 }
 
+
+.tiff-preview {
+    height: 42px;
+    -webkit-transition: height 0.1s;
+    -moz-transition: height 0.1s;
+    -ms-transition: height 0.1s;
+    -o-transition: height 0.1s;
+    transition: height 0.1s;
+}
+
+.hover-visible-only {
+    display: none;
+}
+
+tr:hover .tiff-preview {
+    height: 180px;
+}
+tr:hover .hover-visible-only {
+    display: initial;
+}
 
 
 code, pre {
