@@ -1,6 +1,8 @@
 <?php
 
-define('ROOT_FOLDER', PATH_TO_IS_MANAGER);
+//VIEWER config
+$dzi_image_server = "";
+$viewer_url = "";
 
 // Default language
 $lang = 'en';
@@ -29,7 +31,7 @@ $use_highlightjs = true;
 $highlightjs_style = 'vs';
 
 // Enable ace.js (https://ace.c9.io/) on view's page
-$edit_files = false;
+$edit_files = true;
 
 // Send files though mail
 $send_mail = false;
@@ -41,11 +43,11 @@ $toMailId = ""; //yourmailid@mail.com
 $default_timezone = 'Europe/Prague'; // UTC
 
 // Root path for file manager
-$root_path = '../';
+$root_path = $_SERVER['DOCUMENT_ROOT'];
 
 // Root url for links in file manager.Relative to $http_host. Variants: '', 'path/to/subfolder'
 // Will not working if $root_path will be outside of server document root
-$root_url = ROOT_FOLDER;
+$root_url = '';
 
 // Server hostname. Can set manually if wrong
 $http_host = $_SERVER['HTTP_HOST'];
@@ -60,15 +62,34 @@ $datetime_format = 'd.m.y H:i';
 $upload_extensions = ''; // 'gif,png,jpg'
 
 // show or hide the left side tree view
-$show_tree_view = false;
-
+$show_tree_view = true;
 
 //Array of folders excluded from listing
 $GLOBALS['exclude_folders'] = array(
-    '.git', 'iipimage-martin', 'is',
+    '.git'
 );
 
+$tag_database_file = "tags.sqlite";
 
-// VIEWER CONF
-$dzi_image_server = "https://rationai-vis.ics.muni.cz/iipsrv-martin/iipsrv.fcgi";
-$viewer_url = "https://rationai-vis.ics.muni.cz/visualization/refactor/client/index.php";
+// NOW OVERRIDE ALL PROPS WITH USER SETTINGS
+
+// include user config php file
+if (defined('FM_CONFIG') && is_file(FM_CONFIG) ) {
+    include(FM_CONFIG);
+}
+
+// DEFINE ALL HARDCODED VALUES
+
+// where are php files to look for
+$php_path = $root_url . '/inc';
+
+// absolute path to this script
+$file_path = $root_url . '/files.php';
+
+// where are assets to look for
+$assets_path = $root_url . '/assets';
+
+// where are js files to look for
+$js_path = $root_url . '/js';
+
+$tag_store = $root_url . "/" . $tag_database_file;
