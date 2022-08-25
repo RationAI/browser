@@ -68,7 +68,10 @@ $GLOBALS['exclude_folders'] = array(
     '.git', 'iipimage-martin', 'is',
 );
 
+//Default Image Server Preview URL Maker (for tif pyramid previews)
+$image_preview_url_maker = function ($file) {
+    return "https://rationai-vis.ics.muni.cz/iipsrv-martin/iipsrv.fcgi?Deepzoom={$file}_files/0/0_0.jpg";
+};
 
-// VIEWER CONF
-$dzi_image_server = "https://rationai-vis.ics.muni.cz/iipsrv-martin/iipsrv.fcgi";
+//Url of the Viewer
 $viewer_url = "https://rationai-vis.ics.muni.cz/visualization/refactor/client/index.php";

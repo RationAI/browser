@@ -1,7 +1,11 @@
 <?php
 
-//VIEWER config
-$dzi_image_server = "";
+//Default Image Server Preview URL Maker (for tif pyramid previews)
+$image_preview_url_maker = function ($file) {
+    return "";
+};
+
+//Url of the Viewer
 $viewer_url = "";
 
 // Default language
@@ -69,7 +73,9 @@ $GLOBALS['exclude_folders'] = array(
     '.git'
 );
 
+//Path to the SQlite database file
 $tag_database_file = "tags.sqlite";
+
 
 // NOW OVERRIDE ALL PROPS WITH USER SETTINGS
 

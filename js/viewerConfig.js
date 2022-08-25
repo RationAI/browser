@@ -1,0 +1,223 @@
+class ViewerConfig {
+
+    constructor(props) {
+        this.props = props;
+        this.props.data = this.props.data || {};
+        this.imagePreviewMaker = (file) => {
+            if (typeof file === "string" && file.endsWith(".tif")) { //todo ending
+                return this.props.tiffPreviewMaker(file);
+            }
+            return file;
+        }
+        this.visible = false;
+        this.initHtml();
+        this.import(this.props.data);
+
+        var draggedElement = null;
+        const self = this;
+
+        document.addEventListener('DOMContentLoaded', (event) => {
+            function handleDragStart(e) {
+                draggedElement = this;
+                this.style.opacity = '0.4';
+            }
+
+            function handleDragEnd(e) {
+                draggedElement = null;
+                this.style.opacity = '1';
+            }
+
+            function handleDragOver(e) {
+                e.preventDefault();
+                return false;
+            }
+
+            function handleDrop(e) {
+                e.stopPropagation(); // stops the browser from redirecting.
+                return false;
+            }
+            let items = document.querySelectorAll('.viewer-config-draggable');
+            items.forEach(function(item) {
+                item.draggable = true;
+                item.addEventListener('dragstart', handleDragStart);
+                // item.addEventListener('dragover', handleDragOver);
+                item.addEventListener('dragend', handleDragEnd);
+
+            });
+
+            let parent = document.getElementById('viewer-config-shader-setup');
+            parent.addEventListener('dragstart', handleDragStart);
+            parent.addEventListener('dragenter', (e) => {
+                console.log(e);
+                e.toElement.classList.add('drag-focus');
+            });
+            parent.addEventListener('dragover', handleDragOver);
+            parent.addEventListener('dragleave', (e) => {
+                console.log(e);
+                e.toElement.classList.remove('drag-focus');
+            });
+            parent.addEventListener('dragend', handleDragEnd);
+            parent.addEventListener('drop', (e) => {
+                if (!draggedElement) throw "Invalid dragged node.";
+
+                let fullPath = draggedElement.dataset.source;
+                if (self.props.data.data.includes(fullPath)) return; //todo message
+                let banner = draggedElement.querySelectorAll('img')[0].src;
+                // let newElem = document.createElement('img');
+                // newElem.classList.add('banner-image', 'layer-skew', 'position-absolute');
+                // newElem.style.top = `${-parent.childNodes.length*25}px`;
+                // newElem.src = banner;
+                // parent.style.height = `${70+parent.childNodes.length*22}px`;
+                // parent.classList.remove('preview');
+                // parent.appendChild(newElem);
+
+                let shaderOpts = [
+                    {type: 'heatmap', title: 'Heatmap'},
+                    {type: 'bipolar-heatmap', title: 'Bipolar Heatmap'},
+                    {type: 'edge', title: 'Edge'},
+                    {type: 'colormap', title: 'Colormap'},
+                    {type: 'identity', title: 'Identity'},
+                ].map(x => `<option name="shader-type" value="${x.type}">${x.title}</option>`);
+
+                let newElem = document.createElement('div');
+                newElem.dataset.source = fullPath;
+                let filename = fullPath.split("/");
+                filename = filename[filename.length - 1];
+                newElem.classList.add('banner-container', 'position-relative');
+                newElem.innerHTML = `
+<img class="banner-image" src="${banner}">
+<h4 class="position-absolute bottom-0 f4-light mx-3 my-2 no-wrap overflow-hidden">${filename}</h4>
+<select class="viewer-config-shader-select" style="    position: absolute;
+    top: 0;
+    right: 0;"
+onchange="${self.props.windowName}.setShaderFor('${fullPath}', this.value);">${shaderOpts}</select>
+`;
+                parent.appendChild(newElem);
+                this.setShaderFor(fullPath, 'heatmap');
+            });
+        });
+    }
+
+    initHtml() {
+        let container = document.getElementById(this.props.containerId);
+        if (!container) throw `Container #${this.props.containerId} must exist!`;
+        container.style.minWidth = '250px';
+
+        // let bgTissueConfig = this.props.data?.background;
+        // bgTissueConfig = bgTissueConfig && bgTissueConfig[0];
+        // let imageUrl = bgTissueConfig ? this.props.tiffPreviewMaker(this.props.data.data[bgTissueConfig.dataReference]) : '';
+
+        container.innerHTML = `
+<div id="viewer-config-banner" class="position-relative banner-container">
+</div>                
+<div id="viewer-config-shader-setup" class="preview">
+</div>
+<div class="d-flex" style="flex-direction: row-reverse">
+    <button class="btn pointer" onclick="${this.props.windowName}.open();">Open</button> 
+</div>
+        `;
+
+        document.body.innerHTML += `<form method="POST" action="${this.props.viewerUrl}"  id="redirect" style="display: none;">
+    <input type="hidden" name="visualisation" id="visualisation" value=''>
+</form>`;
+    }
+
+    checkIsVisible() {
+        if (!this.visible) {
+            let bgTissueConfig = this.props.data?.background;
+            this.bgTissue = bgTissueConfig && bgTissueConfig[0];
+            if (this.bgTissue) {
+                let container = document.getElementById(this.props.containerId);
+                container.classList.remove("d-none");
+                container.classList.add("viewer-config-container");
+
+                // container.classList.add("d-flex");
+                this.visible = true;
+            }
+        }
+    }
+
+    open() {
+        document.getElementById("visualisation").value = this.export();
+        document.getElementById("redirect").submit();
+    }
+
+    setTissue(tissuePath) {
+        this._setImportTissue(tissuePath);
+        this._setRenderTissue(tissuePath);
+    }
+
+    setShaderFor(dataPath, shaderType) {
+        let vis = this.props.data.visualizations;
+        if (!vis) {
+            this.props.data.visualizations = vis = [{
+                lossless: true,
+                shaders: {}
+            }];
+        }
+        vis = vis[0];
+
+        if (vis.shaders[dataPath]) {
+            vis.shaders[dataPath].type = shaderType;
+        } else {
+            vis.shaders[dataPath] = {
+                type: shaderType,
+                dataReferences: [this._insertImageData(dataPath)],
+                fixed: false,
+                params: {}
+            };
+        }
+    }
+
+    _insertImageData(dataPath) {
+        let dataList = this.props.data.data;
+        if (!dataList) {
+            this.props.data.data = dataList = [];
+        }
+        let dataIndex = dataList.indexOf(dataPath);
+        if (dataIndex === -1) {
+            dataIndex = dataList.length;
+            dataList.push(dataPath);
+        }
+        return dataIndex;
+    }
+
+    _setImportTissue(tissuePath) {
+        this.props.data.background = [{
+            dataReference: this._insertImageData(tissuePath),
+            "lossless": false
+        }];
+        this.checkIsVisible();
+    }
+
+    _setRenderTissue(tissuePath) {
+        let filename = tissuePath.split("/");
+        filename = filename[filename.length - 1];
+
+        document.getElementById("viewer-config-banner").innerHTML = `
+<img id="viewer-config-banner-image" class="banner-image" src="${this.imagePreviewMaker(tissuePath)}">
+<div class="width-full position-absolute bottom-0" style="height: 60px; background: background: var(--color-bg-primary);
+background: linear-gradient(0deg, var(--color-bg-primary) 0%, transparent 100%);"></div>
+<h3 class="position-absolute bottom-0 f3-light mx-3 my-2 no-wrap overflow-hidden">${filename}</h3>
+`;
+
+    }
+
+    import(data) {
+        this.props.data = typeof data === "string" ? JSON.parse(data) : data;
+
+        if (data.background && data.background.length > 0) {
+            this._setRenderTissue(data.data[data.background[0].dataReference]);
+        }
+
+        if (data.visualizations) {
+
+        }
+
+        this.checkIsVisible();
+    }
+
+    export() {
+        return JSON.stringify(this.props.data);
+    }
+}

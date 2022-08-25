@@ -1112,16 +1112,24 @@ if (isset($_GET['chmod']) && !FM_READONLY && !FM_IS_WIN) {
 
 //--- FILEMANAGER MAIN
 fm_show_header(); // HEADER
-fm_show_nav_path(FM_PATH); // current path
 
-// messages
-fm_show_message();
 
 $num_files = count($files);
 $num_folders = count($folders);
 $all_files_size = 0;
+
 ?>
-<form class="mt-3 mx-3" action="" method="post">
+<div id="double-panel-container" style="max-width: 100vw;">
+<form id="file-browser-form" class="mt-3 mx-3 flex-grow-0" action="" method="post">
+
+    <?php
+    fm_show_nav_path(FM_PATH); // current path
+
+    // messages
+    fm_show_message();
+    ?>
+    ?>
+    <input type="hidden" name="viewer-config" value="">
     <input type="hidden" name="p" value="<?php echo fm_enc(FM_PATH) ?>">
     <input type="hidden" name="group" value="1">
     <?php if(FM_TREEVIEW) { ?>
@@ -1131,12 +1139,13 @@ $all_files_size = 0;
             <div class="tree-title"><i class="fa fa-align-left fa-fw"></i> Browse</div>
             <?php
             //file tre view
-            echo php_file_tree($root_path, "javascript:alert('You clicked on [link]');");
+            //echo php_file_tree($root_path, "javascript:alert('You clicked on [link]');");
             ?>
         </div>
             </div>
+        </div>
     <?php } ?>
-            <div class="col-sm-<?php  echo $_SESSION['treeHide'] == 'true'?'12':'9'; ?> mt-3 mt-md-0">
+            <div class="width-full mt-3 mt-md-0"><!--col-sm-<?php  echo $_SESSION['treeHide'] == 'true'?'12':'9'; ?>-->
                 <div class="table-responsive">
     <table class="table" id="main-table"><thead><tr>
             <?php if (!FM_READONLY): ?>
@@ -1213,37 +1222,53 @@ $all_files_size = 0;
             flush();
         }
 
-//        try {
+        try {
+            //TODO test
 //            require_once "TagStore.php";
 //            $tags = new TagStore();
 //
-//        }catch (Exception $e) {
-//            echo $e;
-//        }
+//            $tags->tagFile("ahoj", "file1.php");
+//            $tags->tagFile("need", "file2.php");
+//            $tags->tagFile("ahoj", "file1.php");
+//            $tags->tagFile("ahoj", "file3.php");
+//            echo $tags->getFiles("file1.php") . "<br><br>";
+//            echo $tags->getTags("need") . "<br><br>";
+//            echo $tags->readFilesTags("file3.php") . "<br><br>";
+//            echo $tags->readTagsFiles("ahoj") . "<br><br>";
+//            $tags->unTagFile("ahoj", "file1.php");
+//            $tags->unTagFile("ahoj", "file2.php");
+//            echo $tags->readTagsFiles("ahoj") . "<br><br>";
+
+        } catch (Exception $e) {
+            echo $e;
+        }
 
         foreach ($files as $f) {
             $fullpath = $path . '/' . $f;
             $is_link = is_link($fullpath);
             $ext = pathinfo($f, PATHINFO_EXTENSION);
             $actions = "";
-
-            $img = "";
-            if (strtolower($ext) === "tiff" || strtolower($ext) === "tif") {
-                $img = "<img class='mr-1 tiff-preview' src=\"$dzi_image_server?Deepzoom=${fullpath}_files/0/0_0.jpg\"/>";
-
-                $actions="<a onclick=\"go(false, '$f', '$fullpath');\" class='pointer'>Open in viewer.</a>";
-
-            } else {
-                $img = $is_link ? 'fa fa-file-text-o' : fm_get_file_icon_class($path . '/' . $f);
-                $img = "<i class=\"$img\"></i>&nbsp;";
-            }
-
+            $is_tiff = strtolower($ext) === "tiff" || strtolower($ext) === "tif";
             $modif = date("d.m.y H:i", filemtime($path . '/' . $f));
             $filesize_raw = filesize($path . '/' . $f);
             $filesize = fm_get_filesize($filesize_raw);
             $filelink = '?p=' . urlencode(FM_PATH) . '&amp;view=' . urlencode($f);
             $all_files_size += $filesize_raw;
             $perms = substr(decoct(fileperms($path . '/' . $f)), -4);
+            $img = $title_tags = $onimageclick = "";
+            if ($is_tiff) {
+                $img = $image_preview_url_maker($fullpath);
+                $img = "<img class='mr-2 tiff-preview' src=\"$img\">";
+                $onimageclick = "onclick=\"viewerConfig.setTissue('$fullpath');\"";
+                $actions="<a $onimageclick class='pointer'>Open in viewer.</a>";
+                $title_tags = "onclick=\"go(false, '$f', '$fullpath');*/viewerConfig.setTissue('$fullpath');\"";
+            } else {
+                $img = $is_link ? 'fa fa-file-text-o' : fm_get_file_icon_class($path . '/' . $f);
+                $img = "<i class=\"$img\"></i>&nbsp;";
+                $title_tags = "href=\"$filelink\" title=\"File info\"";
+                $onimageclick = "onclick=\"location.href = '$filelink';\"";
+            }
+
             if (function_exists('posix_getpwuid') && function_exists('posix_getgrgid')) {
                 $owner = posix_getpwuid(fileowner($path . '/' . $f));
                 $group = posix_getgrgid(filegroup($path . '/' . $f));
@@ -1253,15 +1278,15 @@ $all_files_size = 0;
             }
 
             ?>
-            <tr>
+            <tr class="viewer-config-draggable" data-source="<?php echo $fullpath; ?>">
                 <?php if (!FM_READONLY): ?><td><label><input type="checkbox" name="file[]" value="<?php echo fm_enc($f) ?>"></label></td><?php endif; ?>
                 <td style="display:flex; flex-direction: row">
-                    <div class="icon-conatiner" onclick="location.href = '<?php echo $filelink ?>';">
+                    <div class="icon-conatiner" <?php echo $onimageclick ?>;">
                         <?php echo $img ?>
 
                     </div>
                     <div class="action-container" style="display: flex; flex-direction: column">
-                        <div class="filename"><a href="<?php echo $filelink ?>" title="File info"><?php echo fm_convert_win($f) ?></a><?php echo ($is_link ? ' &rarr; <i>' . readlink($path . '/' . $f) . '</i>' : '') ?></div>
+                        <div class="filename"><a <?php echo $title_tags ?>><?php echo fm_convert_win($f) ?></a><?php echo ($is_link ? ' &rarr; <i>' . readlink($path . '/' . $f) . '</i>' : '') ?></div>
                         <div class="viewer-actions hover-visible-only">
                             <?php echo $actions ?>
                         </div>
@@ -1280,7 +1305,9 @@ $all_files_size = 0;
                         <a title="Copy to..." href="?p=<?php echo urlencode(FM_PATH) ?>&amp;copy=<?php echo urlencode(trim(FM_PATH . '/' . $f, '/')) ?>"><i class="fa fa-files-o"></i></a>
                     <?php endif; ?>
                     <a title="Direct link" href="<?php echo fm_enc(FM_ROOT_URL . (FM_PATH != '' ? '/' . FM_PATH : '') . '/' . $f) ?>" target="_blank"><i class="fa fa-link"></i></a>
-                    <a title="Download" href="?p=<?php echo urlencode(FM_PATH) ?>&amp;dl=<?php echo urlencode($f) ?>"><i class="fa fa-download"></i></a>
+                    <?php if (!$is_tiff) {  ?>
+                        <a title="Download" href="?p=<?php echo urlencode(FM_PATH) ?>&amp;dl=<?php echo urlencode($f) ?>"><i class="fa fa-download"></i></a>
+                    <?php } ?>
                 </td></tr>
             <?php
             flush();
@@ -1303,7 +1330,6 @@ $all_files_size = 0;
     </table>
                 </div>
             </div>
-        </div>
     <?php if (!FM_READONLY): ?>
         <div class="mb-5 row">
             <div class="col-sm-9 offset-sm-3"><a href="#/select-all" class="mt-2 mt-sm-0 btn2 btn btn-small btn-outline-primary" onclick="select_all();return false;"><i class="fa fa-check-square"></i> Select all</a> &nbsp;
@@ -1319,8 +1345,11 @@ $all_files_size = 0;
         </div>
     <?php endif; ?>
 </form>
+<div id="viewer-configurator" class="d-none"></div>
+</div>
 
 <?php
+
 fm_show_footer();
 
 //--- END
@@ -2138,7 +2167,7 @@ header("Expires: Sat, 26 Jul 1997 05:00:00 GMT");
 header("Cache-Control: no-store, no-cache, must-revalidate, post-check=0, pre-check=0");
 header("Pragma: no-cache");
 
-global $lang, $assets_path, $js_path, $viewer_url;
+global $lang, $assets_path, $js_path, $viewer_url, $image_preview_url_maker;
 ?>
     <!DOCTYPE html>
 <html data-color-mode="auto" data-light-theme="light" data-dark-theme="dark_dimmed">
@@ -2159,13 +2188,11 @@ global $lang, $assets_path, $js_path, $viewer_url;
 
     <script type="text/javascript" src="<?php echo $js_path ?>/viewerRun.js"></script>
     <script type="text/javascript" src="<?php echo $js_path ?>/taggle.js"></script>
+    <script type="text/javascript" src="<?php echo $js_path ?>/viewerConfig.js"></script>
+    <link rel="stylesheet" href="<?php echo $assets_path ?>/viewer_config.css">
 
 </head>
 <body>
-
-<form method="POST" action="<?php echo $viewer_url ?>"  id="redirect" style="display: none;">
-    <input type="hidden" name="visualisation" id="visualisation" value=''>
-</form>
 
 <div id="wrapper">
 
@@ -2244,10 +2271,40 @@ global $lang, $assets_path, $js_path, $viewer_url;
     function fm_show_footer()
     {
 
-        global $assets_path, $js_path;
+        global $js_path, $image_preview_url_maker, $viewer_url;
     ?>
 </div>
 <script>
+
+    (function (window){
+        let splitUrlMaker = ('<?php echo $image_preview_url_maker("$$%%[[==]]%%$$"); ?>').split('$$%%[[==]]%%$$');
+        window.dziImagePreviewMaker = function (file) {
+            let res = [splitUrlMaker[0]], i = 1;
+            while( i < splitUrlMaker.length ) {
+                res.push(file);
+                res.push(splitUrlMaker[i++]); //suffix
+                if (i >= splitUrlMaker.length) {
+                    break;
+                }
+                res.push(splitUrlMaker[i++]); //prefix of the next occurrence
+            }
+            return res.join('');
+        };
+
+        window.viewerConfig = new ViewerConfig({
+            windowName: 'viewerConfig',
+            viewerUrl: '<?php echo $viewer_url; ?>',
+            containerId: "viewer-configurator",
+            tiffPreviewMaker: dziImagePreviewMaker,
+            data: `<?php echo isset($_POST['viewer-config']) ? $_POST['viewer-config'] : ''; ?>`,
+        });
+
+        document.getElementById('file-browser-form').addEventListener('submit', () => {
+            document.getElementById('viewer-config').value = viewerConfig.export();
+        });
+    }(window));
+
+
     function newfolder(e) {
         var t = document.getElementById("newfilename").value,
             n = document.querySelector('input[name="newfile"]:checked').value;
