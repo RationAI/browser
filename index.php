@@ -1,12 +1,15 @@
 <?php
 
-define('PATH_TO_IS_MANAGER', './is/');
+//relative difference of index.php wrt. file manager, by default none (this folder)
+define('PATH_TO_IS_MANAGER', '');
 
-function exception_handler(Throwable $exception) {
+//for debug see what's going on
+set_exception_handler(function ($exception) {
     echo "Uncaught exception: " , $exception->getMessage(), "\n";
-}
+});
 
-set_exception_handler('exception_handler');
-
+//custom configuration file
 define('FM_CONFIG', PATH_TO_IS_MANAGER . 'config.php');
+
+//run
 require PATH_TO_IS_MANAGER . 'inc/manager.php';

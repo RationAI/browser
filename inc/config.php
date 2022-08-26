@@ -77,15 +77,12 @@ $GLOBALS['exclude_folders'] = array(
 $tag_database_file = "tags.sqlite";
 
 
-// NOW OVERRIDE ALL PROPS WITH USER SETTINGS
-
-// include user config php file
+// OVERRIDE ALL PROPS WITH USER SETTINGS
 if (defined('FM_CONFIG') && is_file(FM_CONFIG) ) {
     include(FM_CONFIG);
 }
 
 // DEFINE ALL HARDCODED VALUES
-
 // where are php files to look for
 $php_path = $root_url . '/inc';
 

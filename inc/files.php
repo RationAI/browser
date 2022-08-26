@@ -2,10 +2,6 @@
 
 require_once "config.php";
 
-//--- EDIT BELOW CAREFULLY OR DO NOT EDIT AT ALL
-
-
-session_start();
 if(isset($_GET['toggleTree'])) {
     if ($_SESSION['treeHide'] == 'false') {
         $_SESSION['treeHide'] = 'true';
@@ -32,8 +28,8 @@ if (defined('FM_EMBED')) {
 
     session_cache_limiter('');
     session_name('filemanager');
-//    session_start();
 }
+session_start();
 
 
 if (empty($auth_users)) {
