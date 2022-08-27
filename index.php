@@ -1,7 +1,9 @@
 <?php
 
 //relative difference of index.php wrt. file manager, by default none (this folder)
-define('PATH_TO_IS_MANAGER', '');
+if (!defined('PATH_TO_IS_MANAGER')) {
+    define('PATH_TO_IS_MANAGER', '');
+}
 
 //for debug see what's going on
 set_exception_handler(function ($exception) {
