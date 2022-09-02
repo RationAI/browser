@@ -1,3 +1,23 @@
+(function(){
+    var cookies;
+    //https://stackoverflow.com/questions/5639346/what-is-the-shortest-function-for-reading-a-cookie-by-name-in-javascript
+    function readCookie(name,c,C,i){
+        if(cookies){ return cookies[name]; }
+
+        c = document.cookie.split('; ');
+        cookies = {};
+
+        for(i=c.length-1; i>=0; i--){
+            C = c[i].split('=');
+            cookies[C[0]] = C[1];
+        }
+
+        return cookies[name];
+    }
+
+    window.readCookie = readCookie;
+})();
+
 class ViewerConfig {
 
     constructor(props) {
@@ -15,6 +35,10 @@ class ViewerConfig {
 
         var draggedElement = null;
         const self = this;
+
+        document.addEventListener('visibilitychange', (event) =>  {
+            document.cookie = `configuration=${self.export()}; expires=Fri, 31 Dec 9999 23:59:59 GMT; SameSite=None; Secure=false; path=/`;
+        });
 
         document.addEventListener('DOMContentLoaded', (event) => {
             function handleDragStart(e) {
@@ -71,30 +95,12 @@ class ViewerConfig {
                 // parent.classList.remove('preview');
                 // parent.appendChild(newElem);
 
-                let shaderOpts = [
-                    {type: 'heatmap', title: 'Heatmap'},
-                    {type: 'bipolar-heatmap', title: 'Bipolar Heatmap'},
-                    {type: 'edge', title: 'Edge'},
-                    {type: 'colormap', title: 'Colormap'},
-                    {type: 'identity', title: 'Identity'},
-                ].map(x => `<option name="shader-type" value="${x.type}">${x.title}</option>`);
-
-                let newElem = document.createElement('div');
-                newElem.dataset.source = fullPath;
-                let filename = fullPath.split("/");
-                filename = filename[filename.length - 1];
-                newElem.classList.add('banner-container', 'position-relative');
-                newElem.innerHTML = `
-<img class="banner-image" src="${banner}">
-<h4 class="position-absolute bottom-0 f4-light mx-3 my-2 no-wrap overflow-hidden">${filename}</h4>
-<select class="viewer-config-shader-select" style="    position: absolute;
-    top: 0;
-    right: 0;"
-onchange="${self.props.windowName}.setShaderFor('${fullPath}', this.value);">${shaderOpts}</select>
-`;
-                parent.appendChild(newElem);
-                this.setShaderFor(fullPath, 'heatmap');
+                self._setRenderLayer(fullPath);
+                self._setImportShaderFor(fullPath, 'heatmap');
             });
+
+            let cookie = readCookie('configuration');
+            if (cookie) self.import(cookie);
         });
     }
 
@@ -112,7 +118,9 @@ onchange="${self.props.windowName}.setShaderFor('${fullPath}', this.value);">${s
 </div>                
 <div id="viewer-config-shader-setup" class="preview">
 </div>
-<div class="d-flex" style="flex-direction: row-reverse">
+<div class="d-flex" style="flex-direction: row-reverse; justify-content: space-between">
+    <button class="btn pointer" onclick="${this.props.windowName}.clear();">Reset</button> 
+
     <button class="btn pointer" onclick="${this.props.windowName}.open();">Open</button> 
 </div>
         `;
@@ -134,6 +142,13 @@ onchange="${self.props.windowName}.setShaderFor('${fullPath}', this.value);">${s
                 // container.classList.add("d-flex");
                 this.visible = true;
             }
+        } else {
+            if (!this.props.data?.background) {
+                let container = document.getElementById(this.props.containerId);
+                container.classList.add("d-none");
+                container.classList.remove("viewer-config-container");
+                this.visible = false;
+            }
         }
     }
 
@@ -147,7 +162,14 @@ onchange="${self.props.windowName}.setShaderFor('${fullPath}', this.value);">${s
         this._setRenderTissue(tissuePath);
     }
 
-    setShaderFor(dataPath, shaderType) {
+    setShaderFor(dataPath, shaderType='heatmap') {
+        if (!this.visible) return;
+        if (this._setImportShaderFor(dataPath, shaderType)) {
+            this._setRenderLayer(dataPath);
+        }
+    }
+
+    _setImportShaderFor(dataPath, shaderType) {
         let vis = this.props.data.visualizations;
         if (!vis) {
             this.props.data.visualizations = vis = [{
@@ -159,14 +181,15 @@ onchange="${self.props.windowName}.setShaderFor('${fullPath}', this.value);">${s
 
         if (vis.shaders[dataPath]) {
             vis.shaders[dataPath].type = shaderType;
-        } else {
-            vis.shaders[dataPath] = {
-                type: shaderType,
-                dataReferences: [this._insertImageData(dataPath)],
-                fixed: false,
-                params: {}
-            };
+            return false;
         }
+        vis.shaders[dataPath] = {
+            type: shaderType,
+            dataReferences: [this._insertImageData(dataPath)],
+            fixed: false,
+            params: {}
+        };
+        return true;
     }
 
     _insertImageData(dataPath) {
@@ -200,20 +223,57 @@ onchange="${self.props.windowName}.setShaderFor('${fullPath}', this.value);">${s
 background: linear-gradient(0deg, var(--color-bg-primary) 0%, transparent 100%);"></div>
 <h3 class="position-absolute bottom-0 f3-light mx-3 my-2 no-wrap overflow-hidden">${filename}</h3>
 `;
+    }
 
+    _setRenderLayer(dataPath) {
+        let shaderOpts = [
+            {type: 'heatmap', title: 'Heatmap'},
+            {type: 'bipolar-heatmap', title: 'Bipolar Heatmap'},
+            {type: 'edge', title: 'Edge'},
+            {type: 'colormap', title: 'Colormap'},
+            {type: 'identity', title: 'Identity'},
+        ].map(x => `<option name="shader-type" value="${x.type}">${x.title}</option>`);
+
+        let newElem = document.createElement('div');
+        newElem.dataset.source = dataPath;
+        let filename = dataPath.split("/");
+        filename = filename[filename.length - 1];
+        newElem.classList.add('banner-container', 'position-relative');
+        newElem.innerHTML = `
+<img class="banner-image" src="${this.imagePreviewMaker(dataPath)}">
+<h4 class="position-absolute bottom-0 f4-light mx-3 my-2 no-wrap overflow-hidden">${filename}</h4>
+<select class="viewer-config-shader-select" style="    position: absolute;
+    top: 0;
+    right: 0;"
+onchange="${this.props.windowName}.setShaderFor('${dataPath}', this.value);">${shaderOpts}</select>
+`;
+        document.getElementById('viewer-config-shader-setup').appendChild(newElem);
     }
 
     import(data) {
         this.props.data = typeof data === "string" ? JSON.parse(data) : data;
-
+        data = this.props.data;
         if (data.background && data.background.length > 0) {
             this._setRenderTissue(data.data[data.background[0].dataReference]);
         }
 
-        if (data.visualizations) {
-
+        //just one available
+        if (data.visualizations && data.visualizations[0]?.shaders) {
+            const shaderList = data.visualizations[0].shaders;
+            for (let shaderKey in shaderList) {
+                let index = shaderList[shaderKey].dataReferences[0]; //just one supported
+                //just one avaliable
+                this._setRenderLayer(data.data[index]);
+            }
         }
 
+        this.checkIsVisible();
+    }
+
+    clear() {
+        document.getElementById("viewer-config-banner").innerHTML = '';
+        document.getElementById('viewer-config-shader-setup').innerHTML = '';
+        this.props.data = {};
         this.checkIsVisible();
     }
 

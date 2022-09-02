@@ -216,36 +216,58 @@ input[type=checkbox] {
     text-align: center
 }
 
-.float-right {
-    float: right
+.message-container {
+    background: var(--color-bg-danger);
+    text-overflow: ellipsis;
+    cursor: auto;
+}
+.message-container::before {
+    content: 'warning';
+    font-family: 'Material Icons';
+    font-size: initial;
+    padding: 3px 9px;
+    vertical-align: sub;
+}
+.message-container code {
+    display: none;
+    padding: 3px 9px;
+}
+.message-container:hover code {
+    display: block;
+}
+.message-container:hover {
+    max-height: initial;
 }
 
-.float-left {
-    float: left
+.message-container.alert-danger {
+    background: var(--color-bg-danger);
+    background: var(--color-bg-danger);
+}
+.message-container.alert-danger::before {
+    color: var(--color-icon-danger);
 }
 
-.message.ok {
-    border-color: green;
-    color: green
+.message-container.alert-info {
+    background: var(--color-bg-warning);
+}
+.message-container.alert-info::before {
+    color: var(--color-icon-warning);
 }
 
-.message.error {
-    border-color: red;
-    color: red
+.message-container.alert-success {
+    background: var(--color-bg-success);
 }
-
-.message.alert {
-    border-color: orange;
-    color: orange
+.message-container.alert-success::before {
+    color: var(--color-icon-success);
 }
 
 .btn2{
-    color: #296ea3 !important;
-    border-color: #296ea3 !important;
+    color: var(--color-state-focus-border) !important;
+    border-color: var(--color-state-focus-border) !important;
 }
 
 .btn2:hover{
-    background-color: #296ea3 !important;
+    background-color: var(--color-state-focus-border) !important;
 }
 
 
@@ -262,9 +284,9 @@ input[type=checkbox] {
 .inline-actions > a > i {
     font-size: 1em;
     margin-left: 5px;
-    background: #3785c1;
+    background: var(--color-state-focus-border);
     color: #fff;
-    padding: 3px;
+    padding: 3px 5px;
     border-radius: 3px
 }
 
@@ -308,7 +330,7 @@ input[type=checkbox] {
 }
 
 .break-word.float-left a {
-    color: #7d7d7d
+    color: var(--color-text-tertiary);
 }
 
 .break-word + .float-right {
@@ -317,7 +339,7 @@ input[type=checkbox] {
 }
 
 .break-word + .float-right > a {
-    color: #7d7d7d;
+    color: var(--color-text-tertiary);
     font-size: 1.2em;
     margin-right: 4px
 }
@@ -349,7 +371,7 @@ input[type=checkbox] {
 /*}*/
 
 .close:focus, .close:hover {
-    color: #000;
+    color: var(--color-bg-primary);
     cursor: pointer
 }
 
