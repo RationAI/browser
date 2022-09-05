@@ -684,7 +684,6 @@ if (empty(FM_SEARCH_QUERY)) {
 }
 
 if (!empty($files)) {
-    natcasesort($files);
     $key_extractor = function ($f) { return $f[0]; };
     $keys = array_map($key_extractor, $files);
     array_multisort($keys, SORT_NATURAL | SORT_FLAG_CASE, $files);
