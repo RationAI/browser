@@ -657,7 +657,7 @@ if (empty(FM_SEARCH_QUERY)) {
     unset($objects);
 } else {
     function search($path, $rel_path, $front_path, $recursion_stack=0) {
-        if ($recursion_stack > 5) return; //prevent recursion cycle at any cost
+        if ($recursion_stack > 2) return; //prevent recursion cycle at any cost
         global $folders, $files;
         $objects = is_readable($path) ? scandir($path) : array();
         $pattern = FM_SEARCH_QUERY;
@@ -673,14 +673,14 @@ if (empty(FM_SEARCH_QUERY)) {
                 $new_front_path = $front_path . '/' . $file;
                 if (is_file($new_path) && preg_match("#$pattern#i", $file)) {
                     $files[] = array($file, $rel_path, $new_front_path);
-                } elseif (is_dir($new_path) && !is_link($new_path) && $file != '.' && $file != '..' && !in_array($file, $GLOBALS['exclude_folders'])) {
-                    search($new_path, $rel_path . '/' . $file, $new_front_path, $recursion_stack++);
+                } elseif (is_dir($new_path) && !is_link($new_path) && !in_array($file, $GLOBALS['exclude_folders'])) {
+                    search($new_path, $rel_path . '/' . $file, $new_front_path, $recursion_stack+1);
                 }
             }
         }
     }
     search($path, FM_PATH != '' ? FM_PATH : '.', $front_path);
-    fm_set_msg('Only 5 folders in depth are scanned due to many files - the list might be incomplete.', 'alert');
+    fm_set_msg('Only 2 folders in depth are scanned due to many files - the list might be incomplete.', 'alert');
 }
 
 if (!empty($files)) {
