@@ -639,17 +639,17 @@ if (empty(FM_SEARCH_QUERY)) {
     $objects = is_readable($path) ? scandir($path) : array();
     if (is_array($objects)) {
         foreach ($objects as $file) {
-            if ($file == '.' || $file == '..' && in_array($file, $GLOBALS['exclude_folders'])) {
+            if ($file == '.' || $file == '..' || preg_match('/.*\.(?:json|html)/', $file)) {
                 continue;
             }
             if (!FM_SHOW_HIDDEN && substr($file, 0, 1) === '.') {
                 continue;
             }
             $new_path = $path . '/' . $file;
-            $new_front_path = $front_path . '/' . $file;
             if (is_file($new_path)) {
-                $files[] = array($file, FM_PATH, $new_front_path);
-            } elseif (is_dir($new_path) && $file != '.' && $file != '..' && !in_array($file, $GLOBALS['exclude_folders'])) {
+                $sessionfile = "$new_path.session.html";
+                $files[] = array($file, $path, $front_path, is_file($sessionfile) ? $sessionfile : "");
+            } elseif (is_dir($new_path) && !is_link($new_path) && !in_array($file, $GLOBALS['exclude_folders'])) {
                 $folders[] = $file;
             }
         }
@@ -663,18 +663,18 @@ if (empty(FM_SEARCH_QUERY)) {
         $pattern = FM_SEARCH_QUERY;
         if (is_array($objects)) {
             foreach ($objects as $file) {
-                if ($file == '.' || $file == '..') {
+                if ($file == '.' || $file == '..' || preg_match('/.*\.(?:json|html)/', $file)) {
                     continue;
                 }
                 if (!FM_SHOW_HIDDEN && substr($file, 0, 1) === '.') {
                     continue;
                 }
                 $new_path = $path . '/' . $file;
-                $new_front_path = $front_path . '/' . $file;
                 if (is_file($new_path) && preg_match("#$pattern#i", $file)) {
-                    $files[] = array($file, $rel_path, $new_front_path);
+                    $sessionfile = "$new_path.session.html";
+                    $files[] = array($file, $rel_path, $front_path, is_file($sessionfile) ? $sessionfile : "");
                 } elseif (is_dir($new_path) && !is_link($new_path) && !in_array($file, $GLOBALS['exclude_folders'])) {
-                    search($new_path, $rel_path . '/' . $file, $new_front_path, $recursion_stack+1);
+                    search($new_path, $rel_path . '/' . $file, $front_path . '/' . $file, $recursion_stack+1);
                 }
             }
         }
@@ -1290,9 +1290,9 @@ $all_files_size = 0;
 
         foreach ($files as $file_data) {
             $fname = $file_data[0];
-            $rel_path = $file_data[1];
-            $full_path = FM_ROOT_PATH . '/' . $rel_path . '/' . $fname;
-            $full_front_path = $file_data[2];
+            $dirpath = $file_data[1];
+            $full_path = $dirpath . '/' . $fname;
+            $full_front_path = "$file_data[2]/$fname";
 
             $is_link = is_link($full_path);
             $ext = pathinfo($fname, PATHINFO_EXTENSION);
@@ -1301,15 +1301,23 @@ $all_files_size = 0;
             $modif = date("d.m.y H:i", filemtime($full_path));
             $filesize_raw = filesize($full_path);
             $filesize = fm_get_filesize($filesize_raw);
-            $filelink = '?p=' . urlencode($rel_path) . '&amp;view=' . urlencode($fname);
+            $filelink = '?p=' . urlencode($full_path) . '&amp;view=' . urlencode($fname);
             $all_files_size += $filesize_raw;
             $perms = substr(decoct(fileperms($full_path)), -4);
             $img = $title_tags =  $title_prefix = $onimageclick = "";
+
+            if (isset($file_data[3])) {
+                $actions .= "<br><a href=\"{$file_data[3]}\">Last stored session</a>";
+            }
+
             if ($is_tiff) {
                 $img = $image_preview_url_maker($full_front_path);
                 $img = "<img class='mr-2 tiff-preview' src=\"$img\">";
                 $onimageclick = "onclick=\"viewerConfig.setTissue('$full_front_path');\"";
-                $actions="<a $onimageclick class='pointer'>Open as background.</a><br><a onclick=\"viewerConfig.setShaderFor('$full_front_path');\" class='pointer'>Add as layer.</a>";
+                $actions="
+<a href=\"?ajax=runDefaultVisualization&filename={$fname}&directory={$dirpath}&relativeDirectory={$file_data[2]}\">Open As Default</a>
+<br><a $onimageclick class='pointer'>Open as background.</a>
+<br><a onclick=\"viewerConfig.setShaderFor('$full_front_path');\" class='pointer'>Add as layer.</a>";
                 $title_tags = "onclick=\"go(false, '$fname', '$full_front_path');\" class=\"pointer\"";
                 $title_prefix = "<i class='pathopus'>&#xe802;</i>";
             } else {
@@ -1346,21 +1354,21 @@ $all_files_size = 0;
                 <td><?php echo $modif ?>
                 </td>
                 <?php if (!FM_IS_WIN): ?>
-                    <td><?php if (!FM_READONLY): ?><a title="<?php echo 'Change Permissions' ?>" href="?p=<?php echo urlencode($rel_path) ?>&amp;chmod=<?php echo urlencode($fname) ?>"><?php echo $perms ?></a><?php else: ?><?php echo $perms ?><?php endif; ?></td>
+                    <td><?php if (!FM_READONLY): ?><a title="<?php echo 'Change Permissions' ?>" href="?p=<?php echo urlencode($full_path) ?>&amp;chmod=<?php echo urlencode($fname) ?>"><?php echo $perms ?></a><?php else: ?><?php echo $perms ?><?php endif; ?></td>
                     <td><?php echo fm_enc($owner['name'] . ':' . $group['name']) ?></td>
                 <?php endif; ?>
                 <td class="inline-actions">
                     <?php if (!FM_READONLY): ?>
-                        <a title="Delete" href="?p=<?php echo urlencode($rel_path) ?>&amp;del=<?php echo urlencode($fname) ?>" onclick="return confirm('Delete file?');"><i class="fa fa-trash-o"></i></a>
-                        <a title="Rename" href="#" onclick="rename('<?php echo fm_enc($rel_path) ?>', '<?php echo fm_enc($fname) ?>');return false;"><i class="fa fa-pencil-square-o"></i></a>
-                        <a title="Copy to..." href="?p=<?php echo urlencode($rel_path) ?>&amp;copy=<?php echo urlencode(trim($rel_path . '/' . $f, '/')) ?>"><i class="fa fa-files-o"></i></a>
+                        <a title="Delete" href="?p=<?php echo urlencode($full_path) ?>&amp;del=<?php echo urlencode($fname) ?>" onclick="return confirm('Delete file?');"><i class="fa fa-trash-o"></i></a>
+                        <a title="Rename" href="#" onclick="rename('<?php echo fm_enc($full_path) ?>', '<?php echo fm_enc($fname) ?>');return false;"><i class="fa fa-pencil-square-o"></i></a>
+                        <a title="Copy to..." href="?p=<?php echo urlencode($full_path) ?>&amp;copy=<?php echo urlencode(trim($full_path . '/' . $f, '/')) ?>"><i class="fa fa-files-o"></i></a>
                     <?php endif; ?>
 
                     <?php if ($is_tiff) {  ?>
                         <a title="Open in Viewer" onclick="go(false, '<?php echo $fname; ?>', '<?php echo $full_front_path; ?>');" class="pointer"><i class='pathopus'>&#xe802;</i></a>
                     <?php } else { ?>
                         <!--todo we do not support direct links  <a title="Direct link" href="--><?php //echo fm_enc($full_path) ?><!--" target="_blank"><i class="fa fa-link"></i></a>-->
-                        <a title="Download" href="?p=<?php echo urlencode($rel_path) ?>&amp;dl=<?php echo urlencode($fname) ?>"><i class="fa fa-download"></i></a>
+                        <a title="Download" href="?p=<?php echo urlencode($full_path) ?>&amp;dl=<?php echo urlencode($fname) ?>"><i class="fa fa-download"></i></a>
                     <?php } ?>
                 </td>
             </tr>
@@ -1410,7 +1418,12 @@ fm_show_footer();
 
 function fm_show_search_bar() {
     ?>
-    <input class="form-control" style="width: 100%;margin: 12px 0;" type="text" name="s" value="<?php echo FM_SEARCH_QUERY; ?>" placeholder="Search for files...">
+    <input class="form-control" style="width: 100%;margin: 12px 0;" type="text" name="s" value="<?php echo FM_SEARCH_QUERY; ?>" placeholder="Search for files..."
+           onkeydown="if(event.key === 'Enter') {
+                const f=$('#file-browser-form');
+                f.attr('action', '?=' + encodeURIComponent(this.value)).attr('method', 'get').submit();
+           }"
+    >
     <?php
 }
 

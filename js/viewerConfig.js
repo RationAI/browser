@@ -25,83 +25,92 @@ class ViewerConfig {
         this.props.data = this.props.data || {};
         this.imagePreviewMaker = (file) => {
             if (typeof file === "string" && file.endsWith(".tif")) { //todo ending
-                return this.props.tiffPreviewMaker(file);
+                return this.props.tiffPreviewMaker?.(file);
             }
             return file;
         }
         this.visible = false;
-        this.initHtml();
+        this.hasVisualOutput = false;
+        if (this.props.containerId) {
+            this.initHtml();
+            this.hasVisualOutput = true;
+        }
+
+        this.initHiddenForm();
+
         this.import(this.props.data);
 
-        var draggedElement = null;
-        const self = this;
+        if (this.hasVisualOutput) {
+            var draggedElement = null;
+            const self = this;
 
-        document.addEventListener('visibilitychange', (event) =>  {
-            document.cookie = `configuration=${self.export()}; expires=Fri, 31 Dec 9999 23:59:59 GMT; SameSite=None; Secure=false; path=/`;
-        });
-
-        document.addEventListener('DOMContentLoaded', (event) => {
-            function handleDragStart(e) {
-                draggedElement = this;
-                this.style.opacity = '0.4';
-            }
-
-            function handleDragEnd(e) {
-                draggedElement = null;
-                this.style.opacity = '1';
-            }
-
-            function handleDragOver(e) {
-                e.preventDefault();
-                return false;
-            }
-
-            function handleDrop(e) {
-                e.stopPropagation(); // stops the browser from redirecting.
-                return false;
-            }
-            let items = document.querySelectorAll('.viewer-config-draggable');
-            items.forEach(function(item) {
-                item.draggable = true;
-                item.addEventListener('dragstart', handleDragStart);
-                // item.addEventListener('dragover', handleDragOver);
-                item.addEventListener('dragend', handleDragEnd);
-
+            document.addEventListener('visibilitychange', (event) =>  {
+                document.cookie = `configuration=${self.export()}; expires=Fri, 31 Dec 9999 23:59:59 GMT; SameSite=None; Secure=false; path=/`;
             });
 
-            let parent = document.getElementById('viewer-config-shader-setup');
-            parent.addEventListener('dragstart', handleDragStart);
-            parent.addEventListener('dragenter', (e) => {
-                console.log(e);
-                e.toElement.classList.add('drag-focus');
-            });
-            parent.addEventListener('dragover', handleDragOver);
-            parent.addEventListener('dragleave', (e) => {
-                console.log(e);
-                e.toElement.classList.remove('drag-focus');
-            });
-            parent.addEventListener('dragend', handleDragEnd);
-            parent.addEventListener('drop', (e) => {
-                if (!draggedElement) throw "Invalid dragged node.";
+            document.addEventListener('DOMContentLoaded', (event) => {
+                function handleDragStart(e) {
+                    draggedElement = this;
+                    this.style.opacity = '0.4';
+                }
 
-                let fullPath = draggedElement.dataset.source;
-                if (self.props.data.data.includes(fullPath)) return; //todo message
-                let banner = draggedElement.querySelectorAll('img')[0].src;
-                // let newElem = document.createElement('img');
-                // newElem.classList.add('banner-image', 'layer-skew', 'position-absolute');
-                // newElem.style.top = `${-parent.childNodes.length*25}px`;
-                // newElem.src = banner;
-                // parent.style.height = `${70+parent.childNodes.length*22}px`;
-                // parent.classList.remove('preview');
-                // parent.appendChild(newElem);
+                function handleDragEnd(e) {
+                    draggedElement = null;
+                    this.style.opacity = '1';
+                }
 
-                self._setRenderLayer(fullPath);
-                self._setImportShaderFor(fullPath, 'heatmap');
+                function handleDragOver(e) {
+                    e.preventDefault();
+                    return false;
+                }
+
+                function handleDrop(e) {
+                    e.stopPropagation(); // stops the browser from redirecting.
+                    return false;
+                }
+                let items = document.querySelectorAll('.viewer-config-draggable');
+                items.forEach(function(item) {
+                    item.draggable = true;
+                    item.addEventListener('dragstart', handleDragStart);
+                    // item.addEventListener('dragover', handleDragOver);
+                    item.addEventListener('dragend', handleDragEnd);
+
+                });
+
+                let parent = document.getElementById('viewer-config-shader-setup');
+                parent.addEventListener('dragstart', handleDragStart);
+                parent.addEventListener('dragenter', (e) => {
+                    console.log(e);
+                    e.toElement.classList.add('drag-focus');
+                });
+                parent.addEventListener('dragover', handleDragOver);
+                parent.addEventListener('dragleave', (e) => {
+                    console.log(e);
+                    e.toElement.classList.remove('drag-focus');
+                });
+                parent.addEventListener('dragend', handleDragEnd);
+                parent.addEventListener('drop', (e) => {
+                    if (!draggedElement) throw "Invalid dragged node.";
+
+                    let fullPath = draggedElement.dataset.source;
+                    if (self.props.data.data.includes(fullPath)) return; //todo message
+                    let banner = draggedElement.querySelectorAll('img')[0].src;
+                    // let newElem = document.createElement('img');
+                    // newElem.classList.add('banner-image', 'layer-skew', 'position-absolute');
+                    // newElem.style.top = `${-parent.childNodes.length*25}px`;
+                    // newElem.src = banner;
+                    // parent.style.height = `${70+parent.childNodes.length*22}px`;
+                    // parent.classList.remove('preview');
+                    // parent.appendChild(newElem);
+
+                    self._setRenderLayer(fullPath);
+                    self._setImportShaderFor(fullPath, 'heatmap');
+                });
+
+                let cookie = readCookie('configuration');
+                if (cookie) self.import(cookie);
             });
-
-            let cookie = readCookie('configuration');
-            if (cookie) self.import(cookie);
-        });
+        }
     }
 
     initHtml() {
@@ -124,13 +133,16 @@ class ViewerConfig {
     <button class="btn pointer" onclick="${this.props.windowName}.open();">Open</button> 
 </div>
         `;
+    }
 
+    initHiddenForm() {
         document.body.innerHTML += `<form method="POST" action="${this.props.viewerUrl}"  id="redirect" style="display: none;">
     <input type="hidden" name="visualisation" id="visualisation" value=''>
 </form>`;
     }
 
     checkIsVisible() {
+        if (!this.hasVisualOutput) return;
         if (!this.visible) {
             let bgTissueConfig = this.props.data?.background;
             this.bgTissue = bgTissueConfig && bgTissueConfig[0];
@@ -163,7 +175,7 @@ class ViewerConfig {
     }
 
     setShaderFor(dataPath, shaderType='heatmap') {
-        if (!this.visible) return;
+        if (this.hasVisualOutput && !this.visible) return;
         if (this._setImportShaderFor(dataPath, shaderType)) {
             this._setRenderLayer(dataPath);
         }
@@ -180,15 +192,25 @@ class ViewerConfig {
         vis = vis[0];
 
         if (vis.shaders[dataPath]) {
-            vis.shaders[dataPath].type = shaderType;
+            if (typeof shaderType === "string") {
+                vis.shaders[dataPath].type = shaderType;
+            } else {
+                vis.shaders[dataPath] = shaderType;
+            }
             return false;
         }
-        vis.shaders[dataPath] = {
-            type: shaderType,
-            dataReferences: [this._insertImageData(dataPath)],
-            fixed: false,
-            params: {}
-        };
+
+        if (typeof shaderType === "string") {
+            vis.shaders[dataPath] = {
+                type: shaderType,
+                dataReferences: [this._insertImageData(dataPath)],
+                fixed: false,
+                params: {}
+            };
+        } else {
+            shaderType.dataReferences = [this._insertImageData(dataPath)];
+            vis.shaders[dataPath] = shaderType;
+        }
         return true;
     }
 
@@ -214,6 +236,8 @@ class ViewerConfig {
     }
 
     _setRenderTissue(tissuePath) {
+        if (!this.hasVisualOutput) return;
+
         let filename = tissuePath.split("/");
         filename = filename[filename.length - 1];
 
@@ -226,6 +250,8 @@ background: linear-gradient(0deg, var(--color-bg-primary) 0%, transparent 100%);
     }
 
     _setRenderLayer(dataPath) {
+        if (!this.hasVisualOutput) return;
+
         let shaderOpts = [
             {type: 'heatmap', title: 'Heatmap'},
             {type: 'bipolar-heatmap', title: 'Bipolar Heatmap'},
@@ -271,10 +297,13 @@ onchange="${this.props.windowName}.setShaderFor('${dataPath}', this.value);">${s
     }
 
     clear() {
-        document.getElementById("viewer-config-banner").innerHTML = '';
-        document.getElementById('viewer-config-shader-setup').innerHTML = '';
         this.props.data = {};
-        this.checkIsVisible();
+
+        if (this.hasVisualOutput) {
+            document.getElementById("viewer-config-banner").innerHTML = '';
+            document.getElementById('viewer-config-shader-setup').innerHTML = '';
+            this.checkIsVisible();
+        }
     }
 
     export() {
