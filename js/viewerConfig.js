@@ -164,6 +164,18 @@ class ViewerConfig {
         }
     }
 
+    withSession(referenceFilePath) {
+        let plugins = this.props.data.plugins;
+        if (!plugins) {
+            this.props.data.plugins = plugins = {};
+        }
+        plugins["user-session"] = {
+            referenceFile: referenceFilePath,
+            permaLoad: true,
+        }
+        return this;
+    }
+
     open() {
         document.getElementById("visualisation").value = this.export();
         document.getElementById("redirect").submit();
@@ -172,6 +184,7 @@ class ViewerConfig {
     setTissue(tissuePath) {
         this._setImportTissue(tissuePath);
         this._setRenderTissue(tissuePath);
+        return this;
     }
 
     setShaderFor(dataPath, shaderType='heatmap') {
@@ -179,6 +192,7 @@ class ViewerConfig {
         if (this._setImportShaderFor(dataPath, shaderType)) {
             this._setRenderLayer(dataPath);
         }
+        return this;
     }
 
     _setImportShaderFor(dataPath, shaderType) {

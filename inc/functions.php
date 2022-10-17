@@ -28,6 +28,16 @@ function fm_rdelete($path)
     return false;
 }
 
+function array_map_a(callable $cb, array $arr)
+{
+    $fn = function(callable $cb, array $arr) {
+        foreach ($arr as $key => $value) {
+            yield $cb($key, $value);
+        }
+    };
+    return iterator_to_array($fn($cb, $arr));
+}
+
 /**
  * Recursive chmod
  * @param string $path

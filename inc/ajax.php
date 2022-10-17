@@ -93,7 +93,7 @@ switch ($data["ajax"]) {
        const spec = data[key];
        viewerConfig.setShaderFor(spec.file, spec.default);
    }
-   viewerConfig.open();
+   viewerConfig.withSession('$fileDir/$wsi_filename').open();
 </script>
 </body>
    
@@ -102,7 +102,19 @@ EOF;
 
         break;
 
-    case "storeConfig":
+    case "storeSession":
+        require_once "SessionStore.php";
+        $content = $data["session"];
+        $file = $data["filename"];
+
+        global $session_store;
+        $session = new SessionStore($session_store);
+
+        if (strlen($content) > 10e6)
+            die(json_encode(array("status"=>"error", "message" => "Data too big.")));
+        $session->storeOne($file, $content);
+        die(json_encode(array("status"=>"success")));
+
         break;
 
     case "search":

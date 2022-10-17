@@ -16,7 +16,7 @@ class TagStore {
     }
 
     private function _commonQuery($sqlCreator, $operator, ...$elements) {
-        $sql = array_map(function($_) {return "?";}, $elements).join(",");
+        $sql = join(",", array_map(function($_) {return "?";}, $elements));
         $op = isset(TagStore::$_operators[$operator]) ? TagStore::$_operators[$operator] : TagStore::$_operators["OR"];
 
         $stmt = $this->con->prepare($sqlCreator($op, $sql));

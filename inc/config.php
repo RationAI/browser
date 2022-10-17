@@ -76,9 +76,10 @@ $GLOBALS['exclude_folders'] = array(
     '.git'
 );
 
-//Path to the SQlite database file
+//Path to the SQlite tag database file
 $tag_database_file = "tags.sqlite";
-
+//Path to the SQlite sessions db file
+$sessions_database_file = "sessions.sqlite";
 
 // OVERRIDE ALL PROPS WITH USER SETTINGS
 if (defined('FM_CONFIG') && is_file(FM_CONFIG) ) {
@@ -89,7 +90,7 @@ if (defined('FM_CONFIG') && is_file(FM_CONFIG) ) {
 // where are php files to look for
 $php_path = $root_url . '/inc';
 
-// absolute path to this script
+// path to this script
 $file_path = $root_url . '/files.php';
 
 // where are assets to look for
@@ -99,6 +100,7 @@ $assets_path = $root_url . '/assets';
 $js_path = $root_url . '/js';
 
 $tag_store = $root_url . "/" . $tag_database_file;
+$session_store = $root_url . "/" . $sessions_database_file;
 
 if (!isset($frontend_root_path)) {
     $frontend_root_path = $root_path;
