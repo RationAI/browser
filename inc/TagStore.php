@@ -1,6 +1,6 @@
 <?php
 
-class TagStore {
+class TagStore extends SQLite3 {
 
     private static $_operators = array(
         "AND" => "= ALL (",
@@ -9,17 +9,17 @@ class TagStore {
 
     function __construct() {
         global $tag_store;
-        $this->con = new SQLite3($tag_store, SQLITE3_OPEN_CREATE);
-        $this->con->exec("CREATE TABLE IF NOT EXISTS files (id INT AUTO_INCREMENT PRIMARY KEY, file TEXT);");
-        $this->con->exec("CREATE TABLE IF NOT EXISTS tags (id INT AUTO_INCREMENT PRIMARY KEY, tag TEXT);");
-        $this->con->exec("CREATE TABLE IF NOT EXISTS tagging (file_id INT, tag_id INT) PRIMARY KEY(file_id, tag_id);");
+        $this->open($tag_store, SQLITE3_OPEN_READWRITE);
+        $this->exec("CREATE TABLE IF NOT EXISTS files (id INT AUTO_INCREMENT PRIMARY KEY, file TEXT);");
+        $this->exec("CREATE TABLE IF NOT EXISTS tags (id INT AUTO_INCREMENT PRIMARY KEY, tag TEXT);");
+        $this->exec("CREATE TABLE IF NOT EXISTS tagging (file_id INT, tag_id INT) PRIMARY KEY(file_id, tag_id);");
     }
 
     private function _commonQuery($sqlCreator, $operator, ...$elements) {
         $sql = join(",", array_map(function($_) {return "?";}, $elements));
         $op = isset(TagStore::$_operators[$operator]) ? TagStore::$_operators[$operator] : TagStore::$_operators["OR"];
 
-        $stmt = $this->con->prepare($sqlCreator($op, $sql));
+        $stmt = $this->prepare($sqlCreator($op, $sql));
         for ($i = 0; $i < count($elements); $i++) {
             $stmt->bindValue($i+1, $elements[$i], SQLITE3_TEXT);
         }
@@ -59,7 +59,7 @@ class TagStore {
         $files = $this->getFiles("AND", $file);
 
         if (!$tags || count($tags) < 1) {
-            $stmt = $this->con->prepare("INSERT INTO tags VALUES (?)");
+            $stmt = $this->prepare("INSERT INTO tags VALUES (?)");
             $stmt->bindValue(1, $tag, SQLITE3_TEXT);
             $stmt->execute();
             $tags = array(
@@ -67,7 +67,7 @@ class TagStore {
             );
         }
         if (!$files || count($files) < 1) {
-            $stmt = $this->con->prepare("INSERT INTO files VALUES (?)");
+            $stmt = $this->prepare("INSERT INTO files VALUES (?)");
             $stmt->bindValue(1, $file, SQLITE3_TEXT);
             $stmt->execute();
             $files = array(
@@ -75,7 +75,7 @@ class TagStore {
             );
         }
 
-        $this->con->exec("INSERT OR IGNORE INTO INTO tagging VALUES ({$files[0]["id"]}, {$tags[0]["id"]})");
+        $this->exec("INSERT OR IGNORE INTO INTO tagging VALUES ({$files[0]["id"]}, {$tags[0]["id"]})");
     }
 
     public function unTagFile($tag, $file) {
@@ -89,6 +89,6 @@ class TagStore {
             return;
         }
 
-        $this->con->exec("DELETE FROM tagging WHERE file_id={$files[0]["id"]} AND tag_id={$tags[0]["id"]}");
+        $this->exec("DELETE FROM tagging WHERE file_id={$files[0]["id"]} AND tag_id={$tags[0]["id"]}");
     }
 }

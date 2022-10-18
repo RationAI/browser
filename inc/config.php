@@ -77,9 +77,9 @@ $GLOBALS['exclude_folders'] = array(
 );
 
 //Path to the SQlite tag database file
-$tag_database_file = "tags.sqlite";
+$tag_store = "/tags.sqlite";
 //Path to the SQlite sessions db file
-$sessions_database_file = "sessions.sqlite";
+$session_store = "/sessions.sqlite";
 
 // OVERRIDE ALL PROPS WITH USER SETTINGS
 if (defined('FM_CONFIG') && is_file(FM_CONFIG) ) {
@@ -98,9 +98,6 @@ $assets_path = $root_url . '/assets';
 
 // where are js files to look for
 $js_path = $root_url . '/js';
-
-$tag_store = $root_url . "/" . $tag_database_file;
-$session_store = $root_url . "/" . $sessions_database_file;
 
 if (!isset($frontend_root_path)) {
     $frontend_root_path = $root_path;

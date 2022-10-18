@@ -65,6 +65,10 @@ $upload_extensions = ''; // 'gif,png,jpg'
 // show or hide the left side tree view
 $show_tree_view = false;
 
+//Path to the SQlite tag database file
+$tag_store = "/mnt/data/visualization/browser/tags.sqlite";
+//Path to the SQlite sessions db file
+$session_store = "/mnt/data/visualization/browser/sessions.sqlite";
 
 //Array of folders excluded from listing
 $GLOBALS['exclude_folders'] = array(
