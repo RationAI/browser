@@ -172,7 +172,7 @@ class ViewerConfig {
         plugins["user-session"] = {
             referenceFile: referenceFilePath,
             permaLoad: true,
-        }
+        };
         return this;
     }
 

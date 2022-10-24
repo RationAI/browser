@@ -19,6 +19,7 @@ switch ($data["ajax"]) {
         $wsi_filename = $data["filename"];
         $fileDir = $data["directory"];
         $relativeFileDir = $data["relativeDirectory"];
+        //todo sanitize dirs? fm_clean_path
 
         function scan_json_def($full_path, $filename, $wsi_filename_text, $relativeFileDir, &$output) {
             $fname_text = pathinfo($filename, PATHINFO_FILENAME);
@@ -35,7 +36,7 @@ switch ($data["ajax"]) {
                     $output[$fname_text] = (object)array(
                         "file" => "$relativeFileDir/$filename",
                         "order" => 0,
-                        "default" => "heatmap"
+                        "default" => false
                     );
                 }
             }
@@ -45,6 +46,7 @@ switch ($data["ajax"]) {
         $result = array();
         $specs = array();
         $wsi_text = pathinfo($wsi_filename, PATHINFO_FILENAME);
+        $default_vis = "heatmap";
 
         if (is_array($objects)) {
             foreach ($objects as $file) {
@@ -62,10 +64,26 @@ switch ($data["ajax"]) {
                         }
                     }
                 } else if (is_file($fpath) && $file !== $wsi_filename) {
-                    scan_json_def($fpath, $file, $wsi_text, $relativeFileDir, $specs);
+                    if ($file === "default.json") {
+                        //override default visualisation of heatmap with default.json if present
+                        try {
+                            $default_vis = json_decode(file_get_contents($fpath));
+                        } catch (Exception $e) {
+                            //pass
+                        }
+                    } else {
+                        scan_json_def($fpath, $file, $wsi_text, $relativeFileDir, $specs);
+                    }
                 }
             }
         }
+
+        foreach ($specs as $spec_name=>$spec) {
+            if (isset($spec->default) && $spec->default === false) {
+                $spec->default = $default_vis;
+            }
+        }
+
         usort($specs, function ($a, $b) {
             return $a->order - $b->order;
         });

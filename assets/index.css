@@ -140,9 +140,10 @@ code, pre {
     display: block;
     margin-bottom: 10px;
     font: 13px/16px Consolas, 'Courier New', Courier, monospace;
-    border: 1px dashed #ccc;
-    padding: 5px;
-    overflow: auto
+    padding: 15px;
+    border-radius: 5px;
+    overflow: auto;
+    background-color: var(--color-bg-tertiary);
 }
 
 .hidden, .modal {
@@ -174,7 +175,6 @@ input[type=checkbox] {
 
 .message, .path {
     padding: 4px 7px;
-    border: 1px solid #ddd;
 }
 
 .fa.fa-caret-right {

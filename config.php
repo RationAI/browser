@@ -1,7 +1,5 @@
 <?php
 
-define('ROOT_FOLDER', PATH_TO_IS_MANAGER);
-
 // Default language
 $lang = 'en';
 
@@ -44,11 +42,17 @@ $default_timezone = 'Europe/Prague'; // UTC
 $root_path = '../';
 
 // Root paths of the file manager as shown to users
-$frontend_root_path = $root_path;
+$frontend_root_path = '';
 
 // Root url for links in file manager.Relative to $http_host. Variants: '', 'path/to/subfolder'
 // Will not working if $root_path will be outside of server document root
-$root_url = ROOT_FOLDER;
+//if front end path and root path differ use a proxy link that will
+//translate one url to the other (e.g. using htaccess at SERVER/files) and
+//files directory with htaccess redirect from front end to root path
+$root_url = "../";
+
+// Root url for the source files (JS, assets)
+$sources_url = "browser";
 
 // Server hostname. Can set manually if wrong
 $http_host = $_SERVER['HTTP_HOST'];
