@@ -1,4 +1,4 @@
-# Browser for Pathopus
+# Browser for xOpat
 PHP File Manager
 
 Advanced PHP File Manager in a single file.<br>

@@ -564,7 +564,7 @@ $all_files_size = 0;
 <br><br><a $onimageclick class='pointer'>Add as background.</a>
 <br><a onclick=\"viewerConfig.setShaderFor('$full_front_path');\" class='pointer'>Add as layer.</a>";
                 $title_tags = "onclick=\"go(false, '$fname', '$full_front_path');\" class=\"pointer\"";
-                $title_prefix = "<i class='pathopus'>&#xe802;</i>";
+                $title_prefix = "<i class='xopat'>&#xe802;</i>";
             } else {
                 $img = $is_link ? 'fa fa-file-text-o' : fm_get_file_icon_class($fname);
                 $img = "<i class=\"$img\"></i>&nbsp;";
@@ -604,7 +604,7 @@ $all_files_size = 0;
                 <?php endif; ?>
                 <td class="inline-actions">
                     <?php if ($is_tiff) {  ?>
-                        <a title="Open in Viewer" onclick="go(false, '<?php echo $fname; ?>', '<?php echo $full_front_path; ?>');" class="pointer"><i class='pathopus'>&#xe802;</i></a>
+                        <a title="Open in Viewer" onclick="go(false, '<?php echo $fname; ?>', '<?php echo $full_front_path; ?>');" class="pointer"><i class='xopat'>&#xe802;</i></a>
                     <?php } else { ?>
                         <!--todo we do not support direct links  <a title="Direct link" href="--><?php //echo fm_enc($front_dirpath) ?><!--" target="_blank"><i class="fa fa-link"></i></a>-->
                         <a title="Download" href="?p=<?php echo urlencode($front_dirpath) ?>&amp;dl=<?php echo urlencode($fname) ?>"><i class="fa fa-download"></i></a>
@@ -835,7 +835,7 @@ global $lang, $assets_path, $js_path;
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
     <link rel="stylesheet" href="<?php echo $assets_path ?>/primer_css.css">
-    <link rel="stylesheet" href="<?php echo $assets_path ?>/pathopus.css">
+    <link rel="stylesheet" href="<?php echo $assets_path ?>/xopat.css">
     <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" href="<?php echo $assets_path ?>/index.css">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
