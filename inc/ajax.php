@@ -43,12 +43,13 @@ switch ($data["ajax"]) {
         }
 
         $objects = is_readable($fileDir) ? scandir($fileDir) : array();
-        $result = array();
         $specs = array();
         $wsi_text = pathinfo($wsi_filename, PATHINFO_FILENAME);
-        $default_vis = "heatmap";
+        $default_vis = array();
 
         if (is_array($objects)) {
+            $root_specs = array();
+            $specs[] = $root_specs;
             foreach ($objects as $file) {
                 if ($file == '.' || $file == '..') continue;
 
@@ -56,12 +57,14 @@ switch ($data["ajax"]) {
                 if (is_dir($fpath)) {
                     $nested = is_readable($fpath) ? scandir($fpath) : array();
                     if (is_array($nested)) {
+                        $child_specs = array();
                         foreach ($nested as $nestedFile) {
                             if ($nestedFile == '.' || $nestedFile == '..') continue;
 
                             scan_json_def("$fpath/$nestedFile", $nestedFile, $wsi_text,
-                                "$relativeFileDir/$file", $specs);
+                                "$relativeFileDir/$file", $child_specs);
                         }
+                        $specs[] = $child_specs;
                     }
                 } else if (is_file($fpath) && $file !== $wsi_filename) {
                     if ($file === "default.json") {
@@ -72,26 +75,34 @@ switch ($data["ajax"]) {
                             //pass
                         }
                     } else {
-                        scan_json_def($fpath, $file, $wsi_text, $relativeFileDir, $specs);
+                        scan_json_def($fpath, $file, $wsi_text, $relativeFileDir, $root_specs);
                     }
                 }
             }
         }
 
-        foreach ($specs as $spec_name=>$spec) {
-            if (isset($spec->default) && $spec->default === false) {
-                $spec->default = $default_vis;
+        foreach ($specs as $goal) {
+            $i = 0;
+            usort($goal, function ($a, $b) {
+                return $a->order - $b->order;
+            });
+
+            foreach ($goal as $name=>$spec) {
+                if (isset($spec->default) && $spec->default === false) {
+                    if ($i < count($default_vis)) {
+                        $spec->default = $default_vis[$i];
+                    } else {
+                        $spec->default = "heatmap";
+                    }
+                }
+                $i++;
             }
         }
 
-        usort($specs, function ($a, $b) {
-            return $a->order - $b->order;
-        });
         $shader_data = json_encode($specs);
         global $js_path, $assets_path, $viewer_url;
         echo <<<EOF
     
-
    <head>
    <script type="text/javascript" src="$js_path/viewerConfig.js">
 
@@ -107,11 +118,17 @@ switch ($data["ajax"]) {
    });
    
    viewerConfig.setTissue(tissuePath);
-   for (let key in data) {
-       const spec = data[key];
-       viewerConfig.setShaderFor(spec.file, spec.default);
+   for (let goal of data) {
+       if (goal.length < 1) continue;
+       //just first set visualised for now, config cannot handle multiple :/
+       for (let key in goal) {
+           const spec = goal[key];
+           viewerConfig.setShaderFor(spec.file, spec.default);
+           
+       }
+       viewerConfig.withSession('$fileDir/$wsi_filename').open();
+       break; 
    }
-   viewerConfig.withSession('$fileDir/$wsi_filename').open();
 </script>
 </body>
    
