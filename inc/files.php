@@ -50,10 +50,12 @@ if (!@is_dir($root_path)) {
 
 // clean $root_url
 $root_url = fm_clean_path($root_url);
+$front_root_url = fm_clean_path($frontend_root_path);
 
 // abs path for site
 defined('FM_SHOW_HIDDEN') || define('FM_SHOW_HIDDEN', $show_hidden_files);
 defined('FM_ROOT_PATH') || define('FM_ROOT_PATH', $root_path);
+defined('FM_FRONT_PATH') || define('FM_FRONT_PATH', $front_root_url);
 defined('FM_ROOT_URL') || define('FM_ROOT_URL', ($is_https ? 'https' : 'http') . '://' . $http_host . (!empty($root_url) ? '/' . $root_url : ''));
 defined('FM_SELF_URL') || define('FM_SELF_URL', ($is_https ? 'https' : 'http') . '://' . $http_host . $_SERVER['PHP_SELF']);
 
@@ -187,10 +189,13 @@ if (isset($_GET['dl'])) {
 /*************************** /ACTIONS ***************************/
 
 // get current path
-$path = FM_ROOT_PATH;
-$front_path = FM_PATH;
+$path = FM_ROOT_PATH; //full path
+$rel_path = ''; //relative path to the root
+$front_path = FM_FRONT_PATH; //front-end path displayed to users, might have different prefix
 if (FM_PATH != '') {
     $path .= '/' . FM_PATH;
+    $front_path .= '/' . FM_PATH;
+    $rel_path .= '/' . FM_PATH;
 }
 
 // check path
@@ -203,51 +208,64 @@ $parent = fm_get_parent_path(FM_PATH);
 
 $folders = array();
 $files = array();
-if (empty(FM_SEARCH_QUERY)) {
+function file_scan($path, $rel_path, $front_path, $filename_predicate, $max_recursion=-1, $recursion_count=0, $fname_append='') {
+    if ($recursion_count >= $max_recursion) return; //prevent recursion depth
+
+    global $folders, $files;
     $objects = is_readable($path) ? scandir($path) : array();
+    $skips = file_exists("$path/.skip");
+
     if (is_array($objects)) {
         foreach ($objects as $file) {
+            $recursion = $recursion_count;
+
             if ($file == '.' || $file == '..' || preg_match('/.*\.(?:json|html)/', $file)) {
                 continue;
             }
             if (!FM_SHOW_HIDDEN && substr($file, 0, 1) === '.') {
                 continue;
             }
+
             $new_path = $path . '/' . $file;
-            if (is_file($new_path)) {
-                $files[] = array($file, $path, $front_path, "");
-            } elseif (is_dir($new_path) && !is_link($new_path) && !in_array($file, $GLOBALS['exclude_folders'])) {
-                $folders[] = $file;
+            $valid_dir = is_dir($new_path) && !is_link($new_path) && !in_array($file, $GLOBALS['exclude_folders']);
+            if (!$skips) {
+                if ($filename_predicate($file, $new_path)) {
+                    if (is_file($new_path)) {
+                        $files[] = array($file, $rel_path, $front_path, $fname_append);
+                    } else if ($valid_dir) {
+                        $folders[] = array($file, $rel_path, $front_path, $fname_append);
+                    }
+                }
+                $recursion++; //if skipping, do not count as recursion
+            }
+
+            if ($valid_dir) {
+                $new_rp = $rel_path === '' ? $file : $rel_path . '/' . $file;
+                $new_fp = $front_path === '' ? $file : $front_path . '/' . $file;
+                file_scan($new_path, $new_rp, $new_fp, $filename_predicate, $max_recursion, $recursion, "$fname_append/$file");
             }
         }
     }
-    unset($objects);
+} //
+
+if (empty(FM_SEARCH_QUERY)) {
+    $predicate = function ($filename, $filepath) {
+        return true;
+    };
+    //normal list browsing, search with one depth stack limit (current folder)
+    file_scan($path, $rel_path, $front_path, $predicate, 1, 0);
 } else {
-    function search($path, $rel_path, $front_path, $recursion_stack=0) {
-        if ($recursion_stack > 2) return; //prevent recursion cycle at any cost
-        global $folders, $files;
-        $objects = is_readable($path) ? scandir($path) : array();
+    //todo BFS with time limit instead...?
+    $predicate = function ($filename, $filepath) {
+        if (is_dir($filepath)) return false;
         $pattern = FM_SEARCH_QUERY;
-        if (is_array($objects)) {
-            foreach ($objects as $file) {
-                if ($file == '.' || $file == '..' || preg_match('/.*\.(?:json|html)/', $file)) {
-                    continue;
-                }
-                if (!FM_SHOW_HIDDEN && substr($file, 0, 1) === '.') {
-                    continue;
-                }
-                $new_path = $path . '/' . $file;
-                if (is_file($new_path) && preg_match("#$pattern#i", $file)) {
-                    $files[] = array($file, $rel_path, $front_path, "");
-                } elseif (is_dir($new_path) && !is_link($new_path) && !in_array($file, $GLOBALS['exclude_folders'])) {
-                    search($new_path, $rel_path . '/' . $file, $front_path . '/' . $file, $recursion_stack+1);
-                }
-            }
-        }
-    }
-    search($path, FM_PATH != '' ? FM_PATH : '.', $front_path);
+        return preg_match("#$pattern#i", $filename);
+    };
+    //works only because we exclude folders, uses two child depth limit since performance drops significantly...
+    file_scan($path, $rel_path, $front_path, $predicate, 3, 0);
     fm_set_msg('Only 2 folders in depth are scanned due to many files - the list might be incomplete.', 'alert');
 }
+unset($predicate);
 
 if (!empty($files)) {
     $key_extractor = function ($f) { return $f[0]; };
@@ -255,7 +273,9 @@ if (!empty($files)) {
     array_multisort($keys, SORT_NATURAL | SORT_FLAG_CASE, $files);
 }
 if (!empty($folders)) {
-    natcasesort($folders);
+    $key_extractor = function ($f) { return $f[0]; };
+    $keys = array_map($key_extractor, $folders);
+    array_multisort($keys, SORT_NATURAL | SORT_FLAG_CASE, $folders);
 }
 
 // file viewer
@@ -468,18 +488,26 @@ $all_files_size = 0;
             <tr><?php if (!FM_READONLY): ?><td></td><?php endif; ?><td colspan="<?php echo !FM_IS_WIN ? '6' : '4' ?>"><a href="?p=<?php echo urlencode($parent) ?>"><i class="fa fa-chevron-circle-left"></i> ..</a></td></tr>
             <?php
         }
-        foreach ($folders as $f) {
-            $is_link = is_link($path . '/' . $f);
+        foreach ($folders as $folder_data) {
+            $f = $folder_data[0];
+            $dirpath = FM_ROOT_PATH . '/' .$folder_data[1];
+            $full_path = $dirpath . '/' . $f;
+            $front_dirpath = $folder_data[2];
+            $full_front_path = "$folder_data[2]/$f";
+            $position_relative_path_display = "<span class='ellipsize-left path-preview' title='$folder_data[3]'>$folder_data[3]</span>";
+
+            $is_link = is_link($full_path);
             $img = $is_link ? 'icon-link_folder' : 'fa fa-folder-o';
-            $modif = date(FM_DATETIME_FORMAT, filemtime($path . '/' . $f));
-            $perms = substr(decoct(fileperms($path . '/' . $f)), -4);
+            $modif = date(FM_DATETIME_FORMAT, filemtime($full_path));
+            $perms = substr(decoct(fileperms($full_path)), -4);
             if (function_exists('posix_getpwuid') && function_exists('posix_getgrgid')) {
-                $owner = posix_getpwuid(fileowner($path . '/' . $f));
-                $group = posix_getgrgid(filegroup($path . '/' . $f));
+                $owner = posix_getpwuid(fileowner($full_path));
+                $group = posix_getgrgid(filegroup($full_path));
             } else {
                 $owner = array('name' => '?');
                 $group = array('name' => '?');
             }
+            //todo not all things have to work since file name can be required longer...
             ?>
             <tr>
                 <?php if (!FM_READONLY): ?>
@@ -489,9 +517,9 @@ $all_files_size = 0;
                     </label>
                     </td><?php endif; ?>
                 <td>
-                    <div class="filename"><a href="?p=<?php echo urlencode(trim(FM_PATH . '/' . $f, '/')) ?>"><i
-                                class="<?php echo $img ?>"></i> <?php echo fm_convert_win($f) ?>
-                        </a><?php echo($is_link ? ' &rarr; <i>' . readlink($path . '/' . $f) . '</i>' : '') ?></div>
+                    <div class="filename"><a href="?p=<?php echo urlencode(trim($full_front_path, '/')) ?>"><i
+                                class="<?php echo $img ?>"></i> <?php echo $position_relative_path_display . fm_convert_win($f) ?>
+                        </a><?php echo($is_link ? ' &rarr; <i>' . readlink($full_path) . '</i>' : '') ?></div>
                 </td>
                 <td>Folder</td>
                 <td><?php echo $modif ?></td>
@@ -502,16 +530,16 @@ $all_files_size = 0;
                 <?php endif; ?>
                 <td class="inline-actions"><?php if (!FM_READONLY): ?>
                     <?php endif; ?>
-                    <a title="Direct link"
-                       href="<?php echo fm_enc(FM_ROOT_URL . (FM_PATH != '' ? '/' . FM_PATH : '') . '/' . $f . '/') ?>"
-                       target="_blank"><i class="fa fa-link" aria-hidden="true"></i></a>
+<!--                    <a title="Direct link"-->
+<!--                       href="--><?php //echo fm_enc(FM_ROOT_URL . $full_front_path . '/') ?><!--"-->
+<!--                       target="_blank"><i class="fa fa-link" aria-hidden="true"></i></a>-->
                 </td>
             </tr>
             <?php
             flush();
         }
 
-        try {
+//        try {
             //TODO test
 //            require_once "TagStore.php";
 //            $tags = new TagStore();
@@ -527,17 +555,18 @@ $all_files_size = 0;
 //            $tags->unTagFile("ahoj", "file1.php");
 //            $tags->unTagFile("ahoj", "file2.php");
 //            echo $tags->readTagsFiles("ahoj") . "<br><br>";
-
-        } catch (Exception $e) {
-            echo $e;
-        }
+//        } catch (Exception $e) {
+//            echo $e;
+//        }
 
         foreach ($files as $file_data) {
             $fname = $file_data[0];
-            $dirpath = $file_data[1];
+            $dirpath = FM_ROOT_PATH . '/' . $file_data[1];
             $full_path = $dirpath . '/' . $fname;
             $front_dirpath = $file_data[2];
             $full_front_path = "$file_data[2]/$fname";
+
+            $title_prefix = "<span class='ellipsize-left path-preview' title='$file_data[3]'>$file_data[3]</span>";
 
             $is_link = is_link($full_path);
             $ext = pathinfo($fname, PATHINFO_EXTENSION);
@@ -549,7 +578,7 @@ $all_files_size = 0;
             $filelink = '?p=' . urlencode($front_dirpath) . '&amp;view=' . urlencode($fname);
             $all_files_size += $filesize_raw;
             $perms = substr(decoct(fileperms($full_path)), -4);
-            $img = $title_tags =  $title_prefix = $onimageclick = "";
+            $img = $title_tags = $onimageclick = "";
 
             if (isset($file_data[3]) && $file_data[3] !== "") {
                 $actions .= "<br><a href=\"{$file_data[3]}\">Last stored session</a>";
@@ -564,7 +593,7 @@ $all_files_size = 0;
 <br><br><a $onimageclick class='pointer'>Add as background.</a>
 <br><a onclick=\"viewerConfig.setShaderFor('$full_front_path');\" class='pointer'>Add as layer.</a>";
                 $title_tags = "onclick=\"go(false, '$fname', '$full_front_path');\" class=\"pointer\"";
-                $title_prefix = "<i class='xopat'>&#xe802;</i>";
+                $title_prefix = "$title_prefix<i class='xopat'>&#xe802;</i>";
             } else {
                 $img = $is_link ? 'fa fa-file-text-o' : fm_get_file_icon_class($fname);
                 $img = "<i class=\"$img\"></i>&nbsp;";

@@ -135,6 +135,23 @@ tr:hover .hover-visible-only {
     display: initial;
 }
 
+.ellipsize-left {
+    /* Standard CSS ellipsis */
+    white-space: nowrap;
+    overflow: hidden;
+    width: 150px;
+    display: inline-block;
+    text-overflow: ellipsis;
+    direction: rtl;
+    text-align: right;
+}
+
+.path-preview {
+    font-size: small;
+    color: var(--color-text-tertiary);
+    letter-spacing: -1px;
+    vertical-align: text-bottom;
+}
 
 code, pre {
     display: block;

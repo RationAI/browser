@@ -39,7 +39,7 @@ $toMailId = ""; //yourmailid@mail.com
 $default_timezone = 'Europe/Prague'; // UTC
 
 // Root path for file manager
-$root_path = '../';
+$root_path = '..';
 
 // Root paths of the file manager as shown to users
 $frontend_root_path = '';
@@ -49,7 +49,7 @@ $frontend_root_path = '';
 //if front end path and root path differ use a proxy link that will
 //translate one url to the other (e.g. using htaccess at SERVER/files) and
 //files directory with htaccess redirect from front end to root path
-$root_url = "../";
+$root_url = "..";
 
 // Root url for the source files (JS, assets)
 $sources_url = "browser";
