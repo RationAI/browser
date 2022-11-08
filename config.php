@@ -13,9 +13,13 @@ $auth_users = array(
 );
 
 // Readonly users (usernames array)
-$readonly_users = array(
-    'user'
-);
+$readonly_users = array();
+
+// User-dependent roots (default is $root_path)
+$users_root = array();
+
+// User-dependent front-end roots (default is $frontend_root_path)
+$users_image_server_root = array();
 
 // Show or hide files and folders that starts with a dot
 $show_hidden_files = false;
@@ -41,8 +45,8 @@ $default_timezone = 'Europe/Prague'; // UTC
 // Root path for file manager
 $root_path = '..';
 
-// Root paths of the file manager as shown to users
-$frontend_root_path = '';
+// Default root for the WSI server
+$image_server_root_path = '';
 
 // Root url for links in file manager.Relative to $http_host. Variants: '', 'path/to/subfolder'
 // Will not working if $root_path will be outside of server document root

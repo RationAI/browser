@@ -16,13 +16,22 @@ $use_auth = false;
 
 // Users: array('Username' => 'Password', 'Username2' => 'Password2', ...), Password has to encripted into MD5
 $auth_users = array(
-    'root' => '827ccb0eea8a706c4c34a16891f84e7b', //12345
-    'user1' => '827ccb0eea8a706c4c34a16891f84e7b', //12345
+    'root' => '827ccb0eea8a706c4c34a16891f84e7b' //12345
 );
 
 // Readonly users (usernames array)
 $readonly_users = array(
-    'user'
+
+);
+
+// User-dependent roots (default is $root_path)
+$users_root = array(
+
+);
+
+// User-dependent front-end roots (default is $frontend_root_path)
+$users_image_server_root = array(
+
 );
 
 // Show or hide files and folders that starts with a dot
@@ -49,8 +58,8 @@ $default_timezone = 'Europe/Prague'; // UTC
 // Root path for file manager
 $root_path = $_SERVER['DOCUMENT_ROOT'];
 
-// Root paths of the file manager as shown to users
-$frontend_root_path = '';
+// Default root for the WSI server
+$image_server_root_path = '';
 
 // Root url for links in file manager.Relative to $http_host. Variants: '', 'path/to/subfolder'
 // Will not working if $root_path will be outside of server document root

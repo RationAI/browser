@@ -21,6 +21,10 @@ body, code, div, em, form, html, img, label, li, ol, p, pre, small, span, strong
     text-decoration: none
 }
 
+li.nav-item {
+    list-style-type: none;
+}
+
 p, table, ul {
     margin-bottom: 10px
 }
@@ -139,7 +143,7 @@ tr:hover .hover-visible-only {
     /* Standard CSS ellipsis */
     white-space: nowrap;
     overflow: hidden;
-    width: 150px;
+    max-width: 150px;
     display: inline-block;
     text-overflow: ellipsis;
     direction: rtl;
@@ -262,6 +266,7 @@ input[type=checkbox] {
 }
 .message-container.alert-danger::before {
     color: var(--color-icon-danger);
+    content: 'error';
 }
 
 .message-container.alert-info {
@@ -269,6 +274,7 @@ input[type=checkbox] {
 }
 .message-container.alert-info::before {
     color: var(--color-icon-warning);
+    content: 'warning';
 }
 
 .message-container.alert-success {
@@ -276,6 +282,7 @@ input[type=checkbox] {
 }
 .message-container.alert-success::before {
     color: var(--color-icon-success);
+    content: 'done';
 }
 
 .btn2{

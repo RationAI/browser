@@ -118,6 +118,8 @@ switch ($data["ajax"]) {
    });
    
    viewerConfig.setTissue(tissuePath);
+   
+   let run = false;
    for (let goal of data) {
        if (goal.length < 1) continue;
        //just first set visualised for now, config cannot handle multiple :/
@@ -126,8 +128,13 @@ switch ($data["ajax"]) {
            viewerConfig.setShaderFor(spec.file, spec.default);
            
        }
+       run = true;
        viewerConfig.withSession('$fileDir/$wsi_filename').open();
        break; 
+   }
+   
+   if (!run) {
+       viewerConfig.withSession('$fileDir/$wsi_filename').open();
    }
 </script>
 </body>

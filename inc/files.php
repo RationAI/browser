@@ -40,7 +40,19 @@ if (empty($auth_users)) {
 $is_https = isset($_SERVER['HTTPS']) && ($_SERVER['HTTPS'] == 'on' || $_SERVER['HTTPS'] == 1)
     || isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] == 'https';
 
+$is_logged = isset($_SESSION['logged']);
 // clean and check $root_path
+if ($is_logged) {
+    if (isset($users_root[$_SESSION['logged']])) {
+        //re-define default root path
+        $root_path = $users_root[$_SESSION['logged']];
+    }
+    if (isset($users_image_server_root[$_SESSION['logged']])) {
+        //re-define image server root path
+        $image_server_root_path = $users_image_server_root[$_SESSION['logged']];
+    }
+}
+
 $root_path = rtrim($root_path, '\\/');
 $root_path = str_replace('\\', '/', $root_path);
 if (!@is_dir($root_path)) {
@@ -50,12 +62,12 @@ if (!@is_dir($root_path)) {
 
 // clean $root_url
 $root_url = fm_clean_path($root_url);
-$front_root_url = fm_clean_path($frontend_root_path);
+$image_server_root_url = fm_clean_path($image_server_root_path);
 
 // abs path for site
 defined('FM_SHOW_HIDDEN') || define('FM_SHOW_HIDDEN', $show_hidden_files);
 defined('FM_ROOT_PATH') || define('FM_ROOT_PATH', $root_path);
-defined('FM_FRONT_PATH') || define('FM_FRONT_PATH', $front_root_url);
+defined('FM_WSI_SERVER_PATH') || define('FM_WSI_SERVER_PATH', $image_server_root_url);
 defined('FM_ROOT_URL') || define('FM_ROOT_URL', ($is_https ? 'https' : 'http') . '://' . $http_host . (!empty($root_url) ? '/' . $root_url : ''));
 defined('FM_SELF_URL') || define('FM_SELF_URL', ($is_https ? 'https' : 'http') . '://' . $http_host . $_SERVER['PHP_SELF']);
 
@@ -77,10 +89,10 @@ if ($use_auth) {
     } elseif (isset($_POST['fm_usr'], $_POST['fm_pwd'])) {
         // Logging In
         sleep(1);
-        if (isset($auth_users[$_POST['fm_usr']]) && md5($_POST['fm_pwd']) === $auth_users[$_POST['fm_usr']]) {
+        if (isset($auth_users[$_POST['fm_usr']]) && md5($_POST['fm_pwd']) === strtolower($auth_users[$_POST['fm_usr']])) {
             $_SESSION['logged'] = $_POST['fm_usr'];
             fm_set_msg('You are logged in');
-            fm_redirect(FM_SELF_URL . '?p=');
+            fm_redirect(FM_SELF_URL . '?' . $_SERVER['QUERY_STRING']);
         } else {
             unset($_SESSION['logged']);
             fm_set_msg('Invalid Username / Password', 'error');
@@ -92,22 +104,20 @@ if ($use_auth) {
         fm_show_header_login();
         ?>
 
-        <div class="container" style="max-width: 600px">
+        <div class="container" style="max-width: 600px; margin: 0 auto;">
             <form class="mt-5" action="" method="post" autocomplete="off">
-                <center><img src="<?php echo $assets_path ?>/blank.png" alt="File manager" class="img-fluid"></center>
+                <h1 class="f1-light">RationAI File Browser</h1>
                 <hr>
                 <div class="form-group mt-5">
                     <?php
                     fm_show_message();
                     ?>
-                    <label><i class="fa fa-user"></i> Username</label>
                     <input name="fm_usr" id="fm_usr" type="text" class="form-control" placeholder="Enter Username" required autocomplete="false">
                     <div class="invalid-feedback">
                         Username is required.
                     </div>
                 </div>
                 <div class="form-group">
-                    <label><i class="fa fa-lock"></i> Password</label>
                     <input name="fm_pwd" id="fm_pwd" type="password" class="form-control" placeholder="Enter Password" required>
                     <div class="invalid-feedback">
                         Password is required.
@@ -191,10 +201,10 @@ if (isset($_GET['dl'])) {
 // get current path
 $path = FM_ROOT_PATH; //full path
 $rel_path = ''; //relative path to the root
-$front_path = FM_FRONT_PATH; //front-end path displayed to users, might have different prefix
+$wsi_path = FM_WSI_SERVER_PATH; //path for the wsi server
 if (FM_PATH != '') {
     $path .= '/' . FM_PATH;
-    $front_path .= '/' . FM_PATH;
+    $wsi_path .= '/' . FM_PATH;
     $rel_path .= '/' . FM_PATH;
 }
 
@@ -208,7 +218,7 @@ $parent = fm_get_parent_path(FM_PATH);
 
 $folders = array();
 $files = array();
-function file_scan($path, $rel_path, $front_path, $filename_predicate, $max_recursion=-1, $recursion_count=0, $fname_append='') {
+function file_scan($path, $rel_path, $wsi_path, $filename_predicate, $max_recursion=-1, $recursion_count=0, $fname_append='') {
     if ($recursion_count >= $max_recursion) return; //prevent recursion depth
 
     global $folders, $files;
@@ -231,9 +241,9 @@ function file_scan($path, $rel_path, $front_path, $filename_predicate, $max_recu
             if (!$skips) {
                 if ($filename_predicate($file, $new_path)) {
                     if (is_file($new_path)) {
-                        $files[] = array($file, $rel_path, $front_path, $fname_append);
+                        $files[] = array($file, $rel_path, $wsi_path, $fname_append);
                     } else if ($valid_dir) {
-                        $folders[] = array($file, $rel_path, $front_path, $fname_append);
+                        $folders[] = array($file, $rel_path, $wsi_path, $fname_append);
                     }
                 }
                 $recursion++; //if skipping, do not count as recursion
@@ -241,7 +251,7 @@ function file_scan($path, $rel_path, $front_path, $filename_predicate, $max_recu
 
             if ($valid_dir) {
                 $new_rp = $rel_path === '' ? $file : $rel_path . '/' . $file;
-                $new_fp = $front_path === '' ? $file : $front_path . '/' . $file;
+                $new_fp = $wsi_path === '' ? $file : $wsi_path . '/' . $file;
                 file_scan($new_path, $new_rp, $new_fp, $filename_predicate, $max_recursion, $recursion, "$fname_append/$file");
             }
         }
@@ -253,7 +263,7 @@ if (empty(FM_SEARCH_QUERY)) {
         return true;
     };
     //normal list browsing, search with one depth stack limit (current folder)
-    file_scan($path, $rel_path, $front_path, $predicate, 1, 0);
+    file_scan($path, $rel_path, $wsi_path, $predicate, 1, 0);
 } else {
     //todo BFS with time limit instead...?
     $predicate = function ($filename, $filepath) {
@@ -262,7 +272,7 @@ if (empty(FM_SEARCH_QUERY)) {
         return preg_match("#$pattern#i", $filename);
     };
     //works only because we exclude folders, uses two child depth limit since performance drops significantly...
-    file_scan($path, $rel_path, $front_path, $predicate, 3, 0);
+    file_scan($path, $rel_path, $wsi_path, $predicate, 3, 0);
     fm_set_msg('Only 2 folders in depth are scanned due to many files - the list might be incomplete.', 'alert');
 }
 unset($predicate);
@@ -292,7 +302,7 @@ if (isset($_GET['view'])) {
 
     $file_url = FM_ROOT_URL . fm_convert_win((FM_PATH != '' ? '/' . FM_PATH : '') . '/' . $file);
     $file_path = $path . '/' . $file;
-    $front_file_path = $front_path . '/' . $file;
+    $wsi_file_path = $wsi_path . '/' . $file;
 
     $ext = strtolower(pathinfo($file_path, PATHINFO_EXTENSION));
     $mime_type = fm_get_mime_type($file_path);
@@ -490,10 +500,13 @@ $all_files_size = 0;
         }
         foreach ($folders as $folder_data) {
             $f = $folder_data[0];
-            $dirpath = FM_ROOT_PATH . '/' .$folder_data[1];
+
+            $rel_dirpath = $folder_data[1];
+            $full_rel_path = "$rel_dirpath/$f";
+
+            $dirpath = FM_ROOT_PATH . '/' . $rel_dirpath;
             $full_path = $dirpath . '/' . $f;
-            $front_dirpath = $folder_data[2];
-            $full_front_path = "$folder_data[2]/$f";
+
             $position_relative_path_display = "<span class='ellipsize-left path-preview' title='$folder_data[3]'>$folder_data[3]</span>";
 
             $is_link = is_link($full_path);
@@ -517,7 +530,7 @@ $all_files_size = 0;
                     </label>
                     </td><?php endif; ?>
                 <td>
-                    <div class="filename"><a href="?p=<?php echo urlencode(trim($full_front_path, '/')) ?>"><i
+                    <div class="filename"><a href="?p=<?php echo urlencode(trim($full_rel_path, '/')) ?>"><i
                                 class="<?php echo $img ?>"></i> <?php echo $position_relative_path_display . fm_convert_win($f) ?>
                         </a><?php echo($is_link ? ' &rarr; <i>' . readlink($full_path) . '</i>' : '') ?></div>
                 </td>
@@ -531,7 +544,7 @@ $all_files_size = 0;
                 <td class="inline-actions"><?php if (!FM_READONLY): ?>
                     <?php endif; ?>
 <!--                    <a title="Direct link"-->
-<!--                       href="--><?php //echo fm_enc(FM_ROOT_URL . $full_front_path . '/') ?><!--"-->
+<!--                       href="--><?php //echo fm_enc($full_rel_path . '/') ?><!--"-->
 <!--                       target="_blank"><i class="fa fa-link" aria-hidden="true"></i></a>-->
                 </td>
             </tr>
@@ -561,10 +574,15 @@ $all_files_size = 0;
 
         foreach ($files as $file_data) {
             $fname = $file_data[0];
-            $dirpath = FM_ROOT_PATH . '/' . $file_data[1];
+
+            $rel_dirpath = $file_data[1];
+            $full_rel_path = "$rel_dirpath/$f";
+
+            $dirpath = FM_ROOT_PATH . '/' . $rel_dirpath;
             $full_path = $dirpath . '/' . $fname;
-            $front_dirpath = $file_data[2];
-            $full_front_path = "$file_data[2]/$fname";
+
+            $wsi_dirpath = $file_data[2];
+            $full_wsi_path = "$wsi_dirpath/$fname";
 
             $title_prefix = "<span class='ellipsize-left path-preview' title='$file_data[3]'>$file_data[3]</span>";
 
@@ -575,7 +593,7 @@ $all_files_size = 0;
             $modif = date("d.m.y H:i", filemtime($full_path));
             $filesize_raw = filesize($full_path);
             $filesize = fm_get_filesize($filesize_raw);
-            $filelink = '?p=' . urlencode($front_dirpath) . '&amp;view=' . urlencode($fname);
+            $filelink = '?p=' . urlencode($wsi_dirpath) . '&amp;view=' . urlencode($fname);
             $all_files_size += $filesize_raw;
             $perms = substr(decoct(fileperms($full_path)), -4);
             $img = $title_tags = $onimageclick = "";
@@ -585,14 +603,14 @@ $all_files_size = 0;
             }
 
             if ($is_tiff) {
-                $img = $image_preview_url_maker($full_front_path);
+                $img = $image_preview_url_maker($full_wsi_path);
                 $img = "<img class='mr-2 tiff-preview' src=\"$img\">";
-                $onimageclick = "onclick=\"viewerConfig.setTissue('$full_front_path');\"";
+                $onimageclick = "onclick=\"viewerConfig.setTissue('$full_wsi_path');\"";
                 $actions="
-<a href=\"?ajax=runDefaultVisualization&filename={$fname}&directory={$dirpath}&relativeDirectory={$front_dirpath}\">Open As Default</a>
+<a href=\"?ajax=runDefaultVisualization&filename={$fname}&directory={$dirpath}&relativeDirectory={$wsi_dirpath}\">Open As Default</a>
 <br><br><a $onimageclick class='pointer'>Add as background.</a>
-<br><a onclick=\"viewerConfig.setShaderFor('$full_front_path');\" class='pointer'>Add as layer.</a>";
-                $title_tags = "onclick=\"go(false, '$fname', '$full_front_path');\" class=\"pointer\"";
+<br><a onclick=\"viewerConfig.setShaderFor('$full_wsi_path');\" class='pointer'>Add as layer.</a>";
+                $title_tags = "onclick=\"go(false, '$fname', '$full_wsi_path');\" class=\"pointer\"";
                 $title_prefix = "$title_prefix<i class='xopat'>&#xe802;</i>";
             } else {
                 $img = $is_link ? 'fa fa-file-text-o' : fm_get_file_icon_class($fname);
@@ -609,7 +627,7 @@ $all_files_size = 0;
                 $group = array('name' => '?');
             }
             ?>
-            <tr class="viewer-config-draggable" data-source="<?php echo $full_front_path; ?>">
+            <tr class="viewer-config-draggable" data-source="<?php echo $full_wsi_path; ?>">
                 <?php if (!FM_READONLY): ?><td><label><input type="checkbox" name="file[]" value="<?php echo fm_enc($fname) ?>"></label></td><?php endif; ?>
                 <td style="display:flex; flex-direction: row">
                     <div class="icon-conatiner" <?php echo $onimageclick; ?>">
@@ -628,15 +646,15 @@ $all_files_size = 0;
                 <td><?php echo $modif ?>
                 </td>
                 <?php if (!FM_IS_WIN): ?>
-                    <td><?php if (!FM_READONLY): ?><a title="<?php echo 'Change Permissions' ?>" href="?p=<?php echo urlencode($front_dirpath) ?>&amp;chmod=<?php echo urlencode($fname) ?>"><?php echo $perms ?></a><?php else: ?><?php echo $perms ?><?php endif; ?></td>
+                    <td><?php echo $perms ?></td>
                     <td><?php echo fm_enc($owner['name'] . ':' . $group['name']) ?></td>
                 <?php endif; ?>
                 <td class="inline-actions">
                     <?php if ($is_tiff) {  ?>
-                        <a title="Open in Viewer" onclick="go(false, '<?php echo $fname; ?>', '<?php echo $full_front_path; ?>');" class="pointer"><i class='xopat'>&#xe802;</i></a>
+                        <a title="Open in Viewer" onclick="go(false, '<?php echo $fname; ?>', '<?php echo $full_wsi_path; ?>');" class="pointer"><i class='xopat'>&#xe802;</i></a>
                     <?php } else { ?>
-                        <!--todo we do not support direct links  <a title="Direct link" href="--><?php //echo fm_enc($front_dirpath) ?><!--" target="_blank"><i class="fa fa-link"></i></a>-->
-                        <a title="Download" href="?p=<?php echo urlencode($front_dirpath) ?>&amp;dl=<?php echo urlencode($fname) ?>"><i class="fa fa-download"></i></a>
+                        <!--todo we do not support direct links  <a title="Direct link" href="--><?php //echo fm_enc($wsi_dirpath) ?><!--" target="_blank"><i class="fa fa-link"></i></a>-->
+                        <a title="Download" href="?p=<?php echo urlencode($wsi_dirpath) ?>&amp;dl=<?php echo urlencode($fname) ?>"><i class="fa fa-download"></i></a>
                     <?php } ?>
                 </td>
             </tr>
@@ -750,8 +768,8 @@ function fm_show_nav_path($path)
 <!--        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarTogglerDemo02" aria-controls="navbarTogglerDemo02" aria-expanded="false" aria-label="Toggle navigation">-->
 <!--            <span class="navbar-toggler-icon"></span>-->
 <!--        </button>-->
-        <div class="collapse navbar-collapse" id="navbarTogglerDemo02">
-        <div class="navbar-nav float-rightd ml-auto">
+        <div class="collapse navbar-collapse" style="text-align: right;" id="navbarTogglerDemo02">
+        <div class="navbar-nav float-right ml-auto">
             <?php if (!FM_READONLY): ?>
                 <li class="nav-item"><a class="nav-link mx-1" title="Search" href="javascript:showSearch('<?php echo urlencode(FM_PATH) ?>')"><i class="fa fa-search fa-fw"></i> Search</a></li>
             <li class="nav-item"><a class="nav-link mx-1" title="Upload files" href="?p=<?php echo urlencode(FM_PATH) ?>&amp;upload"><i class="fa fa-cloud-upload fa-fw" aria-hidden="true"></i> Upload Files</a></li>
@@ -820,10 +838,10 @@ global $lang, $assets_path;
     <meta name="theme-color" content="#ffffff">
 
 </head>
-<body style="background: linear-gradient(to top left, #99ccff 0%, #ccffcc 100%);background-repeat: no-repeat;background-size: cover">
+<body>
 
 
-<div id="wrapper"">
+<div id="wrapper" class="m-5">
 
     <?php
     }
