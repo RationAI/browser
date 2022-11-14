@@ -711,7 +711,7 @@ $all_files_size = 0;
             containerId: "viewer-configurator",
             tiffPreviewMaker: dziImagePreviewMaker,
             data: `<?php echo isset($_POST['viewer-config']) ? $_POST['viewer-config'] : ''; ?>`,
-        });
+        }).withUser('<?php echo $_SESSION['logged']; ?>');
 
         document.getElementById('file-browser-form').addEventListener('submit', () => {
             document.getElementById('viewer-config').value = viewerConfig.export();

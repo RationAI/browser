@@ -164,6 +164,20 @@ class ViewerConfig {
         }
     }
 
+    withUser(user) {
+        let meta = this.props.data.meta;
+        if (!meta) {
+            this.props.data.meta = meta = {};
+        }
+
+        if (!user) {
+            delete meta["user"];
+        } else {
+            meta["user"] = user;
+        }
+        return this;
+    }
+
     withSession(referenceFilePath) {
         let plugins = this.props.data.plugins;
         if (!plugins) {

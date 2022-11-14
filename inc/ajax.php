@@ -117,7 +117,7 @@ switch ($data["ajax"]) {
         data: '',
    });
    
-   viewerConfig.setTissue(tissuePath);
+   viewerConfig.withUser('{$_SESSION["logged"]}').setTissue(tissuePath);
    
    let run = false;
    for (let goal of data) {
