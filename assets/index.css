@@ -202,7 +202,7 @@ input[type=checkbox] {
     font-size: 1.2em;
     margin: 0 4px;
     vertical-align: middle;
-    color: #ececec
+    color: var(--color-text-tertiary);
 }
 
 .fa.fa-home {
@@ -328,7 +328,7 @@ input[type=checkbox] {
     height: 100%;
     left: 0;
     top: 0;
-    background: #000
+    background: var(--color-bg-primary);
 }
 
 .compact-table {
@@ -355,6 +355,9 @@ input[type=checkbox] {
 
 .break-word.float-left a {
     color: var(--color-text-tertiary);
+    display: inline-block;
+    vertical-align: bottom;
+    line-height: initial;
 }
 
 .break-word + .float-right {
@@ -501,7 +504,7 @@ input[type=search] {
 
 .close {
     float: right;
-    color: #000;
+    color: var(--color-text-primary);
     line-height: 25px;
     position: absolute;
     right: 0;
@@ -512,7 +515,7 @@ input[type=search] {
 }
 
 .close:hover {
-    background: #e4e4e4
+    background: var(--color-bg-tertiary)
 }
 
 .modalDialog p {
@@ -630,7 +633,7 @@ i.fa.fa-file-powerpoint-o {
 
 #file-tree-view::-webkit-scrollbar {
     width: 10px;
-    background-color: #F5F5F5
+    background-color: var(--color-bg-tertiary);
 }
 
 #file-tree-view::-webkit-scrollbar-track {

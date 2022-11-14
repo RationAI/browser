@@ -598,9 +598,9 @@ $all_files_size = 0;
             $perms = substr(decoct(fileperms($full_path)), -4);
             $img = $title_tags = $onimageclick = "";
 
-            if (isset($file_data[3]) && $file_data[3] !== "") {
-                $actions .= "<br><a href=\"{$file_data[3]}\">Last stored session</a>";
-            }
+//            if (isset($file_data[3]) && $file_data[3] !== "") {
+//                $actions .= "<br><a href=\"{$file_data[3]}\">Last stored session</a>";
+//            }
 
             if ($is_tiff) {
                 $img = $image_preview_url_maker($full_wsi_path);
