@@ -218,18 +218,26 @@ $parent = fm_get_parent_path(FM_PATH);
 
 $folders = array();
 $files = array();
-function file_scan($path, $rel_path, $wsi_path, $filename_predicate, $max_recursion=-1, $recursion_count=0, $fname_append='') {
+function file_scan($path, $rel_path, $wsi_path, $filename_predicate, $max_recursion=-1, $recursion_count=0,
+                   $fname_append='', $pulls=array()) {
+
     if ($recursion_count >= $max_recursion) return; //prevent recursion depth
 
     global $folders, $files;
+
+    $new_pulls = array();
     $objects = is_readable($path) ? scandir($path) : array();
-    $skips = file_exists("$path/.skip");
+    if (file_exists("$path/.pull")) {
+        foreach (fm_file_lines("$path/.pull") as $line) {
+            $new_pulls[]=trim($line);
+        }
+    }
 
     if (is_array($objects)) {
         foreach ($objects as $file) {
             $recursion = $recursion_count;
 
-            if ($file == '.' || $file == '..' || preg_match('/.*\.(?:json|html)/', $file)) {
+            if ($file == '.' || $file == '..') {
                 continue;
             }
             if (!FM_SHOW_HIDDEN && substr($file, 0, 1) === '.') {
@@ -238,21 +246,34 @@ function file_scan($path, $rel_path, $wsi_path, $filename_predicate, $max_recurs
 
             $new_path = $path . '/' . $file;
             $valid_dir = is_dir($new_path) && !is_link($new_path) && !in_array($file, $GLOBALS['exclude_folders']);
-            if (!$skips) {
-                if ($filename_predicate($file, $new_path)) {
-                    if (is_file($new_path)) {
-                        $files[] = array($file, $rel_path, $wsi_path, $fname_append);
-                    } else if ($valid_dir) {
-                        $folders[] = array($file, $rel_path, $wsi_path, $fname_append);
-                    }
+            $valid_file = true;
+
+            $will_pull = count($pulls) > 0;
+            if ($will_pull) {
+                $reducer = function ($file, $b) {
+                    if (!$file) return false;
+                    if (gettype($b) === "string" && str_ends_with($file, $b)) return false;
+                    return $file;
+                };
+                $valid_file = array_reduce($pulls, $reducer, $file) === false;
+            }
+
+            if (count($new_pulls) < 1) {
+                $recursion++; //pull does not count as a step
+            }
+
+            if ($filename_predicate($file, $new_path)) {
+                if ($valid_file && is_file($new_path)) {
+                    $files[] = array($file, $rel_path, $wsi_path, $fname_append);
+                } else if ($valid_dir && !$will_pull) {
+                    $folders[] = array($file, $rel_path, $wsi_path, $fname_append);
                 }
-                $recursion++; //if skipping, do not count as recursion
             }
 
             if ($valid_dir) {
                 $new_rp = $rel_path === '' ? $file : $rel_path . '/' . $file;
                 $new_fp = $wsi_path === '' ? $file : $wsi_path . '/' . $file;
-                file_scan($new_path, $new_rp, $new_fp, $filename_predicate, $max_recursion, $recursion, "$fname_append/$file");
+                file_scan($new_path, $new_rp, $new_fp, $filename_predicate, $max_recursion, $recursion, "$fname_append/$file", $new_pulls);
             }
         }
     }
@@ -572,6 +593,15 @@ $all_files_size = 0;
 //            echo $e;
 //        }
 
+        $session = null;
+        try {
+            require_once "SessionStore.php";
+            global $session_store;
+            $session = new SessionStore($session_store);
+        } catch (Exception $e) {
+            //pass
+        }
+
         foreach ($files as $file_data) {
             $fname = $file_data[0];
 
@@ -612,6 +642,17 @@ $all_files_size = 0;
 <br><a onclick=\"viewerConfig.setShaderFor('$full_wsi_path');\" class='pointer'>Add as layer.</a>";
                 $title_tags = "onclick=\"go(false, '$fname', '$full_wsi_path');\" class=\"pointer\"";
                 $title_prefix = "$title_prefix<i class='xopat'>&#xe802;</i>";
+
+                if ($session) {
+                    try {
+                        $ses_data = $session->readOne($fname, $_SESSION["logged"] ?? "")->fetchArray(SQLITE3_ASSOC);
+                        if ($ses_data) {
+                            $actions .= "<br><a> Open last session. </a>";
+                        }
+                    } catch (Exception $e) {
+                        //pass
+                    }
+                }
             } else {
                 $img = $is_link ? 'fa fa-file-text-o' : fm_get_file_icon_class($fname);
                 $img = "<i class=\"$img\"></i>&nbsp;";

@@ -3,8 +3,21 @@
 require_once "config.php";
 require_once "functions.php";
 
+global $global_input;
+if (isset($_POST["ajax"])) {
+    $global_input = $_POST;
+}
+
 // get path
-$p = isset($_GET['p']) ? $_GET['p'] : (isset($_POST['p']) ? $_POST['p'] : '');
+$p = $_GET['p'] ?? ($global_input['p'] ?? '');
+
+// if fm included
+if (defined('FM_EMBED') || empty($auth_users)) {
+    $use_auth = false;
+}
+
+$logged = !($use_auth && !isset($_SESSION['logged']));
+$user = $_SESSION['logged'] ?? '';
 
 // clean path
 $p = fm_clean_path($p);
@@ -12,26 +25,31 @@ $p = fm_clean_path($p);
 // instead globals vars
 define('FM_PATH', $p);
 
-$data = isset($_POST["ajax"]) ? $_POST : $_GET;
+$data = isset($global_input["ajax"]) ? $global_input : $_GET;
 
 switch ($data["ajax"]) {
     case "runDefaultVisualization":
+        //todo if not logged disable access?
+
         $wsi_filename = $data["filename"];
-        $fileDir = $data["directory"];
-        $relativeFileDir = $data["relativeDirectory"];
-        //todo sanitize dirs? fm_clean_path
+        $fileDir = "/" . fm_clean_path($data["directory"]);
+        $relativeFileDir = fm_clean_path($data["relativeDirectory"]);
 
         function scan_json_def($full_path, $filename, $wsi_filename_text, $relativeFileDir, &$output) {
             $fname_text = pathinfo($filename, PATHINFO_FILENAME);
 
-            if (preg_match("/$wsi_filename_text.*\.json/", $filename)) {
+            //called twice to make sure, so
+            $wsi_fname_text = strtok($wsi_filename_text, ".");
+
+
+            if (preg_match("/$wsi_fname_text.*\.json/", $filename)) {
                 try {
                     $output[$fname_text] = json_decode(file_get_contents($full_path));
                     $output[$fname_text]->file = "$relativeFileDir/{$output[$fname_text]->file}";
                 } catch (Exception $e) {
                     //pass
                 }
-            } else if (preg_match("/$wsi_filename_text.*\.tif/", $filename)) {
+            } else if (preg_match("/$wsi_fname_text.*\.tiff?/", $filename)) {
                 if (!isset($output[$fname_text])) {
                     $output[$fname_text] = (object)array(
                         "file" => "$relativeFileDir/$filename",
@@ -145,20 +163,22 @@ EOF;
         break;
 
     case "storeSession":
-        require_once "SessionStore.php";
-        $content = $data["session"];
-        $file = $data["filename"];
+        try {
+            require_once "SessionStore.php";
+            $content = $data["session"];
+            $file = $data["filename"];
+            $user = $data["user"];
 
-        global $session_store;
-        $session = new SessionStore($session_store);
+            global $session_store;
+            $session = new SessionStore($session_store);
 
-        if (strlen($content) > 10e6)
-            die(json_encode(array("status"=>"error", "message" => "Data too big.")));
-        $session->storeOne($file, $content);
-        die(json_encode(array("status"=>"success")));
-
-        break;
-
+            if (strlen($content) > 10e6)
+                die(json_encode(array("status"=>"error", "message" => "Data too big.")));
+            $session->storeOne($file, $user, $content);
+            die(json_encode(array("status"=>"success")));
+        } catch (Exception $e) {
+            die(json_encode(array("status"=>"error", "message" => "Unknown error", "error" => $e)));
+        }
     case "search":
         $result = array();
         function searchFiles($path) {

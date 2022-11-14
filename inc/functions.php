@@ -190,6 +190,22 @@ function fm_redirect($url, $code = 302)
     exit;
 }
 
+//https://stackoverflow.com/questions/13246597/how-to-read-a-large-file-line-by-line
+function fm_file_lines($file) {
+    $file = fopen($file, 'r');
+    if (!$file) return;
+    while (($line = fgets($file)) !== false) yield $line;
+    fclose($file);
+}
+
+if (! function_exists('str_ends_with')) {
+    function str_ends_with(string $haystack, string $needle): bool
+    {
+        $needle_len = strlen($needle);
+        return ($needle_len === 0 || 0 === substr_compare($haystack, $needle, - $needle_len));
+    }
+}
+
 /**
  * Clean path
  * @param string $path

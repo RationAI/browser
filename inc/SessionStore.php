@@ -5,8 +5,10 @@ class SessionStore extends SQLite3
 
     function __construct($session_store)
     {
-        $this->open($session_store, SQLITE3_OPEN_READWRITE);
-        $this->try($this->exec("CREATE TABLE IF NOT EXISTS sessions (id varchar(255) PRIMARY KEY, session TEXT);"));
+        $this->open($session_store, SQLITE3_OPEN_CREATE | SQLITE3_OPEN_READWRITE);
+        $this->exec('PRAGMA journal_mode = wal;');
+        $this->busyTimeout(5000);
+        $this->try($this->exec("CREATE TABLE IF NOT EXISTS sessions (id varchar(255), user varchar(255), session TEXT, PRIMARY KEY (id, user));"));
     }
 
     // public function reporter(...$args) {
@@ -40,21 +42,31 @@ class SessionStore extends SQLite3
             $stmt->bindValue($i++, $key, SQLITE3_TEXT);
             $stmt->bindValue($i++, $value, SQLITE3_TEXT);
         }
-        return $stmt->execute();
+        return $this->try($stmt->execute());
     }
 
-    public function readOne($id)
+    public function readOne($id, $user)
     {
         return $this->_commonQuery(function ($where) {
             return "SELECT * FROM sessions WHERE $where";
-        }, array("id" => $id));
+        }, array("id" => $id, "user" => $user));
     }
 
-    public function storeOne($id, $content)
+    public function storeOne($id, $user, $content)
     {
-        $stmt = $this->try($this->prepare("INSERT INTO sessions(id, session) VALUES (?, ?)"));
+        $data = $this->readOne($id, $user);
+        if ($data->fetchArray(SQLITE3_ASSOC) !== false) {
+            $stmt = $this->try($this->prepare("UPDATE sessions SET session=? WHERE user=? AND id=? VALUES (?, ?, ?)"));
+            $stmt->bindValue(1, $content, SQLITE3_TEXT);
+            $stmt->bindValue(2, $user, SQLITE3_TEXT);
+            $stmt->bindValue(3, $id, SQLITE3_TEXT);
+            return $stmt->execute();
+        }
+
+        $stmt = $this->try($this->prepare("INSERT INTO sessions(id, user, session) VALUES (?, ?, ?)"));
         $stmt->bindValue(1, $id, SQLITE3_TEXT);
-        $stmt->bindValue(2, $content, SQLITE3_TEXT);
+        $stmt->bindValue(2, $user, SQLITE3_TEXT);
+        $stmt->bindValue(3, $content, SQLITE3_TEXT);
         return $stmt->execute();
     }
 }
