@@ -2,10 +2,12 @@ var user_settings = {
     params: {
         "debug": true
     },
+    meta: {},
     data: [],
     background: [],
     shaderSources: [],
-    visualizations: []
+    visualizations: [],
+    plugins: {}
 };
 
 
@@ -14,15 +16,15 @@ function moveTo(id) {
     elmnt.scrollIntoView();
 }
 
-function go(newTab, title, image, ...dataArray) {
-    loadFormData(newTab, title, image, ...dataArray);
+function go(user, newTab, title, image, ...dataArray) {
+    loadFormData(user, newTab, title, image, ...dataArray);
     document.getElementById("redirect").submit();
     resetFormData();
 }
 
-function goMask(newTab, title, image, maskJSONdata, ...dataArray) {
-    user_settings.plugins = {"gui_annotations": {}};
-    loadFormData(newTab, title, image, ...dataArray);
+function goMask(user, newTab, title, image, maskJSONdata, ...dataArray) {
+    user_settings.plugins["gui_annotations"] = {};
+    loadFormData(user, newTab, title, image, ...dataArray);
     let form = document.getElementById("redirect");
 
     var node = document.createElement("input");
@@ -55,7 +57,13 @@ function goMask(newTab, title, image, maskJSONdata, ...dataArray) {
     resetFormData();
 }
 
-function loadFormData(newTab, title, image, ...dataArray) {
+function openHtmlExport(exported) {
+    let child = window.open("about:blank","myChild");
+    child.document.write(decodeURIComponent(exported));
+    child.document.close();
+}
+
+function loadFormData(user, newTab, title, image, ...dataArray) {
     let vis = {name: title, shaders: {}};
     user_settings.data.push(image);
     user_settings.background.push({
@@ -73,6 +81,14 @@ function loadFormData(newTab, title, image, ...dataArray) {
             vis.shaders[index++] = item.shader;
         }
         user_settings.visualizations.push(vis);
+    }
+
+    if (user) {
+        user_settings.plugins["user-session"] = {
+            referenceFile: image,
+            permaLoad: true,
+        };
+        user_settings.meta["user"] = user;
     }
 
     document.getElementById("visualisation").value = JSON.stringify(user_settings);

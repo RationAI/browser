@@ -179,6 +179,12 @@ class ViewerConfig {
     }
 
     withSession(referenceFilePath) {
+        if (typeof referenceFilePath !== "string" || !referenceFilePath.trim()) {
+            //not supported
+            delete plugins["user-session"];
+            return this;
+        }
+
         let plugins = this.props.data.plugins;
         if (!plugins) {
             this.props.data.plugins = plugins = {};
@@ -191,6 +197,12 @@ class ViewerConfig {
     }
 
     open() {
+        //without user disable session
+        if (!this.props.data.meta["user"]) {
+            console.warn("User not set: session disabled.");
+            delete this.props.data.plugins["user-session"];
+        }
+
         document.getElementById("visualisation").value = this.export();
         document.getElementById("redirect").submit();
     }
@@ -198,6 +210,7 @@ class ViewerConfig {
     setTissue(tissuePath) {
         this._setImportTissue(tissuePath);
         this._setRenderTissue(tissuePath);
+        this.withSession(tissuePath); //todo dirty, and what if multiple files presented -> session stored to one of them :/
         return this;
     }
 

@@ -1,5 +1,8 @@
 <?php
 
+error_reporting(E_ERROR);
+ini_set('display_errors', 1);
+
 //Default Image Server Preview URL Maker (for tif pyramid previews)
 $image_preview_url_maker = function ($file) {
     return "";

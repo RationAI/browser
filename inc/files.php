@@ -1,6 +1,5 @@
 <?php
 
-require_once "config.php";
 require_once "functions.php";
 
 if(isset($_GET['toggleTree'])) {
@@ -9,32 +8,6 @@ if(isset($_GET['toggleTree'])) {
     } else {
         $_SESSION['treeHide'] = 'false';
     }
-}
-
-// if fm included
-if (defined('FM_EMBED')) {
-    $use_auth = false;
-} else {
-    @set_time_limit(600);
-
-    date_default_timezone_set($default_timezone);
-
-    ini_set('default_charset', 'UTF-8');
-    if (version_compare(PHP_VERSION, '5.6.0', '<') && function_exists('mb_internal_encoding')) {
-        mb_internal_encoding('UTF-8');
-    }
-    if (function_exists('mb_regex_encoding')) {
-        mb_regex_encoding('UTF-8');
-    }
-
-    session_cache_limiter('');
-    session_name('filemanager');
-}
-session_start();
-
-
-if (empty($auth_users)) {
-    $use_auth = false;
 }
 
 $is_https = isset($_SERVER['HTTPS']) && ($_SERVER['HTTPS'] == 'on' || $_SERVER['HTTPS'] == 1)
@@ -200,12 +173,11 @@ if (isset($_GET['dl'])) {
 
 // get current path
 $path = FM_ROOT_PATH; //full path
-$rel_path = ''; //relative path to the root
+$rel_path = FM_PATH; //relative path to the root
 $wsi_path = FM_WSI_SERVER_PATH; //path for the wsi server
 if (FM_PATH != '') {
     $path .= '/' . FM_PATH;
     $wsi_path .= '/' . FM_PATH;
-    $rel_path .= '/' . FM_PATH;
 }
 
 // check path
@@ -602,6 +574,8 @@ $all_files_size = 0;
             //pass
         }
 
+        $user = $_SESSION["logged"] ?? "";
+
         foreach ($files as $file_data) {
             $fname = $file_data[0];
 
@@ -628,10 +602,6 @@ $all_files_size = 0;
             $perms = substr(decoct(fileperms($full_path)), -4);
             $img = $title_tags = $onimageclick = "";
 
-//            if (isset($file_data[3]) && $file_data[3] !== "") {
-//                $actions .= "<br><a href=\"{$file_data[3]}\">Last stored session</a>";
-//            }
-
             if ($is_tiff) {
                 $img = $image_preview_url_maker($full_wsi_path);
                 $img = "<img class='mr-2 tiff-preview' src=\"$img\">";
@@ -640,14 +610,15 @@ $all_files_size = 0;
 <a href=\"?ajax=runDefaultVisualization&filename={$fname}&directory={$dirpath}&relativeDirectory={$wsi_dirpath}\">Open As Default</a>
 <br><br><a $onimageclick class='pointer'>Add as background.</a>
 <br><a onclick=\"viewerConfig.setShaderFor('$full_wsi_path');\" class='pointer'>Add as layer.</a>";
-                $title_tags = "onclick=\"go(false, '$fname', '$full_wsi_path');\" class=\"pointer\"";
+                $title_tags = "onclick=\"go('$user', false, '$fname', '$full_wsi_path');\" class=\"pointer\"";
                 $title_prefix = "$title_prefix<i class='xopat'>&#xe802;</i>";
 
                 if ($session) {
                     try {
-                        $ses_data = $session->readOne($fname, $_SESSION["logged"] ?? "")->fetchArray(SQLITE3_ASSOC);
+                        $ses_data = $session->readOne("$rel_dirpath/$fname", $_SESSION["logged"] ?? "")->fetchArray(SQLITE3_ASSOC);
                         if ($ses_data) {
-                            $actions .= "<br><a> Open last session. </a>";
+                            $exports = rawurlencode($ses_data["session"]);
+                            $actions .= "<br><a class='pointer' onclick='openHtmlExport(`$exports`)'> Open last session. </a>";
                         }
                     } catch (Exception $e) {
                         //pass
@@ -692,7 +663,7 @@ $all_files_size = 0;
                 <?php endif; ?>
                 <td class="inline-actions">
                     <?php if ($is_tiff) {  ?>
-                        <a title="Open in Viewer" onclick="go(false, '<?php echo $fname; ?>', '<?php echo $full_wsi_path; ?>');" class="pointer"><i class='xopat'>&#xe802;</i></a>
+                        <a title="Open in Viewer" onclick="go('<?php echo $user; ?>', false, '<?php echo $fname; ?>', '<?php echo $full_wsi_path; ?>');" class="pointer"><i class='xopat'>&#xe802;</i></a>
                     <?php } else { ?>
                         <!--todo we do not support direct links  <a title="Direct link" href="--><?php //echo fm_enc($wsi_dirpath) ?><!--" target="_blank"><i class="fa fa-link"></i></a>-->
                         <a title="Download" href="?p=<?php echo urlencode($wsi_dirpath) ?>&amp;dl=<?php echo urlencode($fname) ?>"><i class="fa fa-download"></i></a>

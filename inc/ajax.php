@@ -1,6 +1,5 @@
 <?php
 
-require_once "config.php";
 require_once "functions.php";
 
 global $global_input;
@@ -11,10 +10,6 @@ if (isset($_POST["ajax"])) {
 // get path
 $p = $_GET['p'] ?? ($global_input['p'] ?? '');
 
-// if fm included
-if (defined('FM_EMBED') || empty($auth_users)) {
-    $use_auth = false;
-}
 
 $logged = !($use_auth && !isset($_SESSION['logged']));
 $user = $_SESSION['logged'] ?? '';
@@ -34,6 +29,8 @@ switch ($data["ajax"]) {
         $wsi_filename = $data["filename"];
         $fileDir = "/" . fm_clean_path($data["directory"]);
         $relativeFileDir = fm_clean_path($data["relativeDirectory"]);
+
+
 
         function scan_json_def($full_path, $filename, $wsi_filename_text, $relativeFileDir, &$output) {
             $fname_text = pathinfo($filename, PATHINFO_FILENAME);
@@ -147,12 +144,12 @@ switch ($data["ajax"]) {
            
        }
        run = true;
-       viewerConfig.withSession('$fileDir/$wsi_filename').open();
+       viewerConfig.open();
        break; 
    }
    
    if (!run) {
-       viewerConfig.withSession('$fileDir/$wsi_filename').open();
+       viewerConfig.open();
    }
 </script>
 </body>
@@ -174,8 +171,10 @@ EOF;
 
             if (strlen($content) > 10e6)
                 die(json_encode(array("status"=>"error", "message" => "Data too big.")));
-            $session->storeOne($file, $user, $content);
-            die(json_encode(array("status"=>"success")));
+            if ($session->storeOne($file, $user, $content)) {
+                die(json_encode(array("status"=>"success")));
+            }
+            die(json_encode(array("status"=>"error", "message" => "Failed to write the session.")));
         } catch (Exception $e) {
             die(json_encode(array("status"=>"error", "message" => "Unknown error", "error" => $e)));
         }
