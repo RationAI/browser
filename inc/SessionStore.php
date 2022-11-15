@@ -30,15 +30,10 @@ class SessionStore extends SQLite3
 
     public function storeOne($id, $user, $content)
     {
-        $data = $this->readOne($id, $user);
-
-        if ($data && $data->fetchArray(SQLITE3_ASSOC)) {
-            $stmt = $this->try($this->prepare("UPDATE sessions SET session=? WHERE user=? AND id=? LIMIT 1"));
-            $stmt->bindValue(1, $content, SQLITE3_TEXT);
-            $stmt->bindValue(2, $user, SQLITE3_TEXT);
-            $stmt->bindValue(3, $id, SQLITE3_TEXT);
-            return $this->try($stmt->execute());
-        }
+        $stmt = $this->try($this->prepare("DELETE FROM sessions WHERE user=? AND id=?"));
+        $stmt->bindValue(1, $user, SQLITE3_TEXT);
+        $stmt->bindValue(2, $id, SQLITE3_TEXT);
+        $stmt->execute();
 
         $stmt = $this->try($this->prepare("INSERT INTO sessions(id, user, session) VALUES (?, ?, ?)"));
         $stmt->bindValue(1, $id, SQLITE3_TEXT);
