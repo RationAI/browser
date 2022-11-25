@@ -198,7 +198,7 @@ class ViewerConfig {
 
     open() {
         //without user disable session
-        if (!this.props.data.meta["user"]) {
+        if (!this.props.data.meta?.["user"]) {
             console.warn("User not set: session disabled.");
             delete this.props.data.plugins["user-session"];
         }
@@ -220,6 +220,23 @@ class ViewerConfig {
             this._setRenderLayer(dataPath);
         }
         return this;
+    }
+
+    _unsetLayer(node) {
+        node =  node.parentNode;
+        let vis = this.props.data.visualizations;
+
+        if (vis?.length > 0) {
+            vis = vis[0];
+            let path = node.dataset.path;
+            if (path) {
+                let layer = vis.shaders[path];
+                if (layer && this._removeImageData(path) !== -1) {
+                    delete vis.shaders[path];
+                    node.remove();
+                }
+            }
+        }
     }
 
     _setImportShaderFor(dataPath, shaderType) {
@@ -268,6 +285,18 @@ class ViewerConfig {
         return dataIndex;
     }
 
+    _removeImageData(dataPath) {
+        let dataList = this.props.data.data;
+        if (!dataList) {
+            this.props.data.data = dataList = [];
+        }
+        let dataIndex = dataList.indexOf(dataPath);
+        if (dataIndex !== -1) {
+            dataList.splice(dataIndex, 1);
+        }
+        return dataIndex;
+    }
+
     _setImportTissue(tissuePath) {
         this.props.data.background = [{
             dataReference: this._insertImageData(tissuePath),
@@ -306,7 +335,9 @@ background: linear-gradient(0deg, var(--color-bg-primary) 0%, transparent 100%);
         let filename = dataPath.split("/");
         filename = filename[filename.length - 1];
         newElem.classList.add('banner-container', 'position-relative');
+        newElem.dataset.path = dataPath;
         newElem.innerHTML = `
+<span class="material-icons position-absolute left-0 pointer top-0" onclick="${this.props.windowName}._unsetLayer(this);">close</span>
 <img class="banner-image" src="${this.imagePreviewMaker(dataPath)}">
 <h4 class="position-absolute bottom-0 f4-light mx-3 my-2 no-wrap overflow-hidden">${filename}</h4>
 <select class="viewer-config-shader-select" style="    position: absolute;
