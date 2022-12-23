@@ -18,16 +18,25 @@
     window.readCookie = readCookie;
 })();
 
+function fireForm(event, url, question) {
+    event.preventDefault();
+    if (!confirm(question)) return false;
+    const form = document.getElementById('file-browser-form');
+    form.action = url;
+    form.submit();
+}
+
 class ViewerConfig {
 
     constructor(props) {
         this.props = props;
         this.props.data = this.props.data || {};
         this.imagePreviewMaker = (file) => {
-            if (typeof file === "string" && file.endsWith(".tif")) { //todo ending
-                return this.props.tiffPreviewMaker?.(file);
-            }
-            return file;
+            //todo support for playin images? now only image server
+            // if (typeof file === "string" && file.endsWith(".tif")) {
+            //     return this.props.tiffPreviewMaker?.(file);
+            // }
+            return this.props.tiffPreviewMaker?.(file) || file;
         }
         this.visible = false;
         this.hasVisualOutput = false;
@@ -179,13 +188,13 @@ class ViewerConfig {
     }
 
     withSession(referenceFilePath) {
+        let plugins = this.props.data.plugins;
         if (typeof referenceFilePath !== "string" || !referenceFilePath.trim()) {
             //not supported
             delete plugins["user-session"];
             return this;
         }
 
-        let plugins = this.props.data.plugins;
         if (!plugins) {
             this.props.data.plugins = plugins = {};
         }
@@ -198,9 +207,10 @@ class ViewerConfig {
 
     open() {
         //without user disable session
-        if (!this.props.data.meta?.["user"]) {
+        const plugins = this.props.data.plugins;
+        if (!this.props.data.meta?.["user"] && plugins) {
             console.warn("User not set: session disabled.");
-            delete this.props.data.plugins["user-session"];
+            delete plugins["user-session"];
         }
 
         document.getElementById("visualisation").value = this.export();

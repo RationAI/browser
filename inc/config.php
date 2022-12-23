@@ -97,12 +97,17 @@ $GLOBALS['exclude_folders'] = array(
     '.git'
 );
 
+//Path to the analysis enpoint, leave as false if you don't know
+$wsi_analysis_endpoint = false;
+
+//Require authentication for write operations
 $require_auth = false;
 
 //Path to the SQlite tag database file
 $tag_store = "/tags.sqlite";
 //Path to the SQlite sessions db file
 $session_store = "/sessions.sqlite";
+$user_store = "/users.sqlite";
 
 // OVERRIDE ALL PROPS WITH USER SETTINGS
 if (defined('FM_CONFIG') && is_file(FM_CONFIG) ) {

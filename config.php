@@ -18,6 +18,9 @@ $readonly_users = array();
 // User-dependent roots (default is $root_path)
 $users_root = array();
 
+//Require authentication for write operations
+$require_auth = true;
+
 // User-dependent front-end roots (default is $frontend_root_path)
 $users_image_server_root = array();
 
@@ -77,6 +80,8 @@ $show_tree_view = false;
 $tag_store = "/mnt/data/visualization/browser/tags.sqlite";
 //Path to the SQlite sessions db file
 $session_store = "/mnt/data/visualization/browser/sessions.sqlite";
+//Path to the SQlite user db file
+$user_store = "/mnt/data/visualization/browser/users.sqlite";
 
 //Array of folders excluded from listing
 $GLOBALS['exclude_folders'] = array(

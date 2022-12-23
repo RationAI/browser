@@ -47,6 +47,7 @@ defined('FM_SELF_URL') || define('FM_SELF_URL', ($is_https ? 'https' : 'http') .
 // logout
 if (isset($_GET['logout'])) {
     unset($_SESSION['logged']);
+    unset($_SESSION['token']);
     fm_redirect(FM_SELF_URL);
 }
 
@@ -96,6 +97,7 @@ if ($use_auth) {
                         Password is required.
                     </div>
                 </div>
+                <input type="hidden" name="token" value="<?php echo htmlentities($_SESSION['token']); ?>" />
                 <button type="submit" class="btn btn-info py-2 px-4""><i class="fa fa-sign-in"></i> Log In</button>
             </form>
         </div>
@@ -167,6 +169,27 @@ if (isset($_GET['dl'])) {
         fm_set_msg('File not found', 'error');
         fm_redirect(FM_SELF_URL . '?p=' . urlencode(FM_PATH));
     }
+}
+
+if (isset($_GET['del'], $_POST['token']) && !FM_READONLY) {
+    $del = str_replace( '/', '', fm_clean_path( $_GET['del'] ) );
+    if ($del != '' && $del != '..' && $del != '.' && verifyToken($_POST['token'])) {
+        $path = FM_ROOT_PATH;
+        if (FM_PATH != '') {
+            $path .= '/' . FM_PATH;
+        }
+        $is_dir = is_dir($path . '/' . $del);
+        if (fm_rdelete($path . '/' . $del)) {
+            $msg = $is_dir ? 'Folder <b>%s</b> deleted' : 'File <b>%s</b> deleted';
+            fm_set_msg(sprintf($msg, fm_enc($del)));
+        } else {
+            $msg = $is_dir ? 'Folder <b>%s</b> not deleted' : 'File <b>%s</b> not deleted';
+            fm_set_msg(sprintf($msg, fm_enc($del)), 'error');
+        }
+    } else {
+        fm_set_msg('Invalid file or folder name', 'error');
+    }
+    $FM_PATH=FM_PATH;fm_redirect(FM_SELF_URL . '?p=' . urlencode($FM_PATH));
 }
 
 /*************************** /ACTIONS ***************************/
@@ -437,14 +460,30 @@ $all_files_size = 0;
 
 ?>
 <div id="double-panel-container" style="max-width: 100vw;">
-<form id="file-browser-form" class="mt-3 mx-3 flex-grow-0" action="" method="post">
 
+
+    <?php
+
+    if ($wsi_analysis_endpoint) {
+echo <<<EOF
+<!--ANALYSIS FORM-->
+    <form action="$wsi_analysis_endpoint" method="post" id="uploader" enctype="multipart/form-data">
+        <input type="hidden" class="form-control" id="request-analysis" name="" value=""/>
+    </form>
+EOF;
+
+    }
+
+    ?>
+
+<form id="file-browser-form" class="mt-3 mx-3 flex-grow-0" action="" method="post">
     <input type="hidden" name="viewer-config" value="">
     <input type="hidden" name="p" value="<?php echo fm_enc(FM_PATH) ?>">
+    <input type="hidden" name="token" value="<?php echo $_SESSION['token']; ?>">
     <input type="hidden" name="group" value="1">
     <?php if(FM_TREEVIEW) { ?>
         <div class="row">
-            <div class="col-sm-3  <?php  echo $_SESSION['treeHide'] == 'true'?'d-none':''; ?>">
+            <div class="col-sm-3 <?php echo $_SESSION['treeHide'] == 'true'?'d-none':''; ?>">
         <div class="file-tree-view border w-100" id="file-tree-view">
             <div class="tree-title"><i class="fa fa-align-left fa-fw"></i> Browse</div>
             <?php
@@ -468,13 +507,20 @@ $all_files_size = 0;
                     fm_show_message();
 
                     ?>
+
+
+
+<!--  TODO analysis?                  <div id="analysis-message" class="m-3 border-0 rounded-2"></div>-->
+
+
                     <table class="table" id="main-table"><thead><tr>
-            <?php if (!FM_READONLY): ?>
-                <th style="width:3%">
-                    <label>
-                        <input type="checkbox" title="Invert selection" onclick="checkbox_toggle()">
-                    </label>
-                </th><?php endif; ?>
+<!--            --><?php //if (!FM_READONLY): ?>
+<!--                <th style="width:3%">-->
+<!--                    <label>-->
+<!--                        <input type="checkbox" title="Invert selection" onclick="checkbox_toggle()">-->
+<!--                    </label>-->
+<!--                </th>-->
+<!--            --><?php //endif; ?>
             <th>Name</th>
             <th style="width:10%">Size</th>
             <th style="width:12%">Modified</th>
@@ -488,9 +534,12 @@ $all_files_size = 0;
         // link to parent folder
         if ($parent !== false) {
             ?>
-            <tr><?php if (!FM_READONLY): ?><td></td><?php endif; ?><td colspan="<?php echo !FM_IS_WIN ? '6' : '4' ?>"><a href="?p=<?php echo urlencode($parent) ?>"><i class="fa fa-chevron-circle-left"></i> ..</a></td></tr>
+            <tr>
+<!--                --><?php //if (!FM_READONLY): ?><!--<td></td>--><?php //endif; ?>
+                <td colspan="<?php echo !FM_IS_WIN ? '6' : '4' ?>"><a href="?p=<?php echo urlencode($parent) ?>"><i class="fa fa-chevron-circle-left"></i> ..</a></td></tr>
             <?php
         }
+
         foreach ($folders as $folder_data) {
             $f = $folder_data[0];
 
@@ -505,6 +554,7 @@ $all_files_size = 0;
             $is_link = is_link($full_path);
             $img = $is_link ? 'icon-link_folder' : 'fa fa-folder-o';
             $modif = date(FM_DATETIME_FORMAT, filemtime($full_path));
+
             $perms = substr(decoct(fileperms($full_path)), -4);
             if (function_exists('posix_getpwuid') && function_exists('posix_getgrgid')) {
                 $owner = posix_getpwuid(fileowner($full_path));
@@ -516,12 +566,13 @@ $all_files_size = 0;
             //todo not all things have to work since file name can be required longer...
             ?>
             <tr>
-                <?php if (!FM_READONLY): ?>
-                    <td>
-                    <label>
-                        <input type="checkbox" name="file[]" value="<?php echo fm_enc($f) ?>">
-                    </label>
-                    </td><?php endif; ?>
+<!--                --><?php //if (!FM_READONLY): ?>
+<!--                    <td>-->
+<!--                    <label>-->
+<!--                        <input type="checkbox" name="file[]" value="--><?php //echo fm_enc($f) ?><!--">-->
+<!--                    </label>-->
+<!--                    </td>-->
+<!--                --><?php //endif; ?>
                 <td>
                     <div class="filename"><a href="?p=<?php echo urlencode(trim($full_rel_path, '/')) ?>"><i
                                 class="<?php echo $img ?>"></i> <?php echo $position_relative_path_display . fm_convert_win($f) ?>
@@ -534,11 +585,23 @@ $all_files_size = 0;
                     </td>
                     <td><?php echo $owner['name'] . ':' . $group['name'] ?></td>
                 <?php endif; ?>
-                <td class="inline-actions"><?php if (!FM_READONLY): ?>
-                    <?php endif; ?>
+                <td class="inline-actions"><?php if (!FM_READONLY && $rel_dirpath != ""): ?>
+                        <a title="Delete" class="pointer" onclick="fireForm(event, '?p=<?php echo urlencode($rel_dirpath) ?>&amp;del=<?php echo urlencode($f) ?>', 'Really delete folder <?php echo $f ?>');">
+                            <i class="fa fa-trash-o" aria-hidden="true"></i></a>
+                     <?php endif; ?>
 <!--                    <a title="Direct link"-->
 <!--                       href="--><?php //echo fm_enc($full_rel_path . '/') ?><!--"-->
 <!--                       target="_blank"><i class="fa fa-link" aria-hidden="true"></i></a>-->
+
+                    <?php
+                    if ($wsi_analysis_endpoint && (FM_PATH == "" || FM_PATH == "/")) {
+                        echo <<<EOF
+                        <input type="submit" form="uploader" style="cursor: pointer" id="send-one-file-analysis" onclick="
+let form = document.getElementById('uploader'); form.children[0].setAttribute('name', 'request'); form.children[0].setAttribute('value', '$f');                       
+                        " name="command" value="Run analysis" class="form-control"/>
+EOF;
+                    }
+                    ?>
                 </td>
             </tr>
             <?php
@@ -576,6 +639,17 @@ $all_files_size = 0;
 
         $user = $_SESSION["logged"] ?? "";
 
+        $user_db = null;
+        if ($user) {
+            try {
+                require_once "UserStore.php";
+                global $user_store;
+                $user_db = new UserStore($user_store);
+            } catch (Exception $e) {
+                //pass
+            }
+        }
+
         foreach ($files as $file_data) {
             $fname = $file_data[0];
 
@@ -602,12 +676,26 @@ $all_files_size = 0;
             $perms = substr(decoct(fileperms($full_path)), -4);
             $img = $title_tags = $onimageclick = "";
 
+            $row_class="";
+            $not_yet_seen="";
+
             if ($is_tiff) {
+                if ($user_db) {
+                    try {
+                        if (!$user_db->checkSeen($user, "$rel_dirpath/$fname")->fetchArray(SQLITE3_ASSOC)) {
+                            $row_class .= "not-yet-seen";
+                            $not_yet_seen = "(not yet viewed)";
+                        }
+                    } catch (Exception $e) {
+                        //pass
+                    }
+                }
+
                 $img = $image_preview_url_maker($full_wsi_path);
                 $img = "<img class='mr-2 tiff-preview' src=\"$img\">";
                 $onimageclick = "onclick=\"viewerConfig.setTissue('$full_wsi_path');\"";
                 $actions="
-<a href=\"?ajax=runDefaultVisualization&filename={$fname}&directory={$dirpath}&relativeDirectory={$wsi_dirpath}\">Open As Default</a>
+<a href=\"?ajax=runDefaultVisualization&filename={$fname}&directory={$dirpath}&relativeDirectory={$wsi_dirpath}\">Open As Default</a> $not_yet_seen
 <br><br><a $onimageclick class='pointer'>Add as background.</a>
 <br><a onclick=\"viewerConfig.setShaderFor('$full_wsi_path');\" class='pointer'>Add as layer.</a>";
                 $title_tags = "onclick=\"go('$user', false, '$fname', '$full_wsi_path');\" class=\"pointer\"";
@@ -615,7 +703,7 @@ $all_files_size = 0;
 
                 if ($session) {
                     try {
-                        $ses_data = $session->readOne("$rel_dirpath/$fname", $_SESSION["logged"] ?? "")->fetchArray(SQLITE3_ASSOC);
+                        $ses_data = $session->readOne("$rel_dirpath/$fname", $user)->fetchArray(SQLITE3_ASSOC);
                         if ($ses_data) {
                             $exports = rawurlencode($ses_data["session"]);
                             $actions .= "<br><a class='pointer' onclick='openHtmlExport(`$exports`)'> Open last session. </a>";
@@ -639,8 +727,8 @@ $all_files_size = 0;
                 $group = array('name' => '?');
             }
             ?>
-            <tr class="viewer-config-draggable" data-source="<?php echo $full_wsi_path; ?>">
-                <?php if (!FM_READONLY): ?><td><label><input type="checkbox" name="file[]" value="<?php echo fm_enc($fname) ?>"></label></td><?php endif; ?>
+            <tr class="viewer-config-draggable <?php echo $row_class;?>" data-source="<?php echo $full_wsi_path; ?>">
+<!--                --><?php //if (!FM_READONLY): ?><!--<td><label><input type="checkbox" name="file[]" value="--><?php //echo fm_enc($fname) ?><!--"></label></td>--><?php //endif; ?>
                 <td style="display:flex; flex-direction: row">
                     <div class="icon-conatiner" <?php echo $onimageclick; ?>">
                         <?php echo $img ?>
@@ -664,7 +752,15 @@ $all_files_size = 0;
                 <td class="inline-actions">
                     <?php if ($is_tiff) {  ?>
                         <a title="Open in Viewer" onclick="go('<?php echo $user; ?>', false, '<?php echo $fname; ?>', '<?php echo $full_wsi_path; ?>');" class="pointer"><i class='xopat'>&#xe802;</i></a>
-                    <?php } else { ?>
+                      <?php
+
+                    } else if ($wsi_analysis_endpoint && strtolower($ext) === "mrxs") {
+                        echo <<<EOF
+                        <input type="submit" form="uploader" style="cursor: pointer" id="send-one-file-analysis" onclick="
+let form = document.getElementById('uploader'); form.children[0].setAttribute('name', 'file'); form.children[0].setAttribute('value', '$full_path');
+                        " name="command" value="Run analysis" class="form-control"/>
+EOF;
+                    }  else { ?>
                         <!--todo we do not support direct links  <a title="Direct link" href="--><?php //echo fm_enc($wsi_dirpath) ?><!--" target="_blank"><i class="fa fa-link"></i></a>-->
                         <a title="Download" href="?p=<?php echo urlencode($wsi_dirpath) ?>&amp;dl=<?php echo urlencode($fname) ?>"><i class="fa fa-download"></i></a>
                     <?php } ?>
@@ -688,16 +784,17 @@ $all_files_size = 0;
         }
         ?>
     </table>
+<!--                --><?php //if (!FM_READONLY): ?>
+<!--                    <div class="mb-5 row">-->
+<!--                        <div class="col-sm-9 offset-sm-3"><a href="#/select-all" class="mt-2 mt-sm-0 btn2 btn btn-small btn-outline-primary" onclick="select_all();return false;"><i class="fa fa-check-square"></i> Select all</a> &nbsp;-->
+<!--                            <a href="#/unselect-all" class="mt-2 mt-sm-0 btn2 btn btn-small btn-outline-primary" onclick="unselect_all();return false;"><i class="fa fa-window-close"></i> Unselect all</a> &nbsp;-->
+<!--                            <a href="#/invert-all" class="mt-2 mt-sm-0 btn2 btn btn-small btn-outline-primary" onclick="invert_all();return false;"><i class="fa fa-th-list"></i> Invert selection</a> &nbsp;-->
+<!--                        </div>-->
+<!--                    </div>-->
+<!--                --><?php //endif; ?>
                 </div>
             </div>
-    <?php if (!FM_READONLY): ?>
-        <div class="mb-5 row">
-            <div class="col-sm-9 offset-sm-3"><a href="#/select-all" class="mt-2 mt-sm-0 btn2 btn btn-small btn-outline-primary" onclick="select_all();return false;"><i class="fa fa-check-square"></i> Select all</a> &nbsp;
-            <a href="#/unselect-all" class="mt-2 mt-sm-0 btn2 btn btn-small btn-outline-primary" onclick="unselect_all();return false;"><i class="fa fa-window-close"></i> Unselect all</a> &nbsp;
-            <a href="#/invert-all" class="mt-2 mt-sm-0 btn2 btn btn-small btn-outline-primary" onclick="invert_all();return false;"><i class="fa fa-th-list"></i> Invert selection</a> &nbsp;
-            </div>
-        </div>
-    <?php endif; ?>
+
 </form>
 <div id="viewer-configurator" class="d-none"></div>
 </div>
@@ -782,12 +879,12 @@ function fm_show_nav_path($path)
 <!--        </button>-->
         <div class="collapse navbar-collapse" style="text-align: right;" id="navbarTogglerDemo02">
         <div class="navbar-nav float-right ml-auto">
-            <?php if (!FM_READONLY): ?>
-                <li class="nav-item"><a class="nav-link mx-1" title="Search" href="javascript:showSearch('<?php echo urlencode(FM_PATH) ?>')"><i class="fa fa-search fa-fw"></i> Search</a></li>
-            <li class="nav-item"><a class="nav-link mx-1" title="Upload files" href="?p=<?php echo urlencode(FM_PATH) ?>&amp;upload"><i class="fa fa-cloud-upload fa-fw" aria-hidden="true"></i> Upload Files</a></li>
-                <li class="nav-item"><a class="nav-link mx-1" title="New folder" href style="outline: none;" data-toggle="modal" data-target="#createNewItem"><i class="fa fa-plus-square fa-fw"></i> New Item</a></li>
-                <li class="nav-item"><a href="?toggleTree=true" class="nav-link mx-1" title="Toggle Directories List"><i class="fa fa-eye-slash fa-fw"></i> Toggle Tree View</a></li>
-            <?php endif; ?>
+<!--            --><?php //if (!FM_READONLY): ?>
+<!--                <li class="nav-item"><a class="nav-link mx-1" title="Search" href="javascript:showSearch('--><?php //echo urlencode(FM_PATH) ?><!--')"><i class="fa fa-search fa-fw"></i> Search</a></li>-->
+<!--                <li class="nav-item"><a class="nav-link mx-1" title="Upload files" href="?p=--><?php //echo urlencode(FM_PATH) ?><!--&amp;upload"><i class="fa fa-cloud-upload fa-fw" aria-hidden="true"></i> Upload Files</a></li>-->
+<!--                <li class="nav-item"><a class="nav-link mx-1" title="New folder" href style="outline: none;" data-toggle="modal" data-target="#createNewItem"><i class="fa fa-plus-square fa-fw"></i> New Item</a></li>-->
+<!--                <li class="nav-item"><a href="?toggleTree=true" class="nav-link mx-1" title="Toggle Directories List"><i class="fa fa-eye-slash fa-fw"></i> Toggle Tree View</a></li>-->
+<!--            --><?php //endif; ?>
             <?php if (FM_USE_AUTH): ?><li class="nav-item"><a class="nav-link ml-1" title="Logout" href="?logout=1"><i class="fa fa-sign-out fa-fw" aria-hidden="true"></i> Log Out</a></li><?php endif; ?>
         </div>
         </div>
@@ -913,6 +1010,7 @@ global $lang, $assets_path, $js_path;
     <script type="text/javascript" src="<?php echo $js_path ?>/taggle.js"></script>
     <script type="text/javascript" src="<?php echo $js_path ?>/viewerConfig.js"></script>
     <link rel="stylesheet" href="<?php echo $assets_path ?>/viewer_config.css">
+    <script type="text/javascript">window.csrf = '<?php echo $_SESSION['token']; ?>';</script>
 
 </head>
 <body>

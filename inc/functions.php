@@ -190,6 +190,16 @@ function fm_redirect($url, $code = 302)
     exit;
 }
 
+/**
+ * Verify CSRF TOKEN and remove after cerify
+ * @param string $token
+ * @return bool
+ */
+function verifyToken($token)
+{
+    return hash_equals($_SESSION['token'], $token);
+}
+
 //https://stackoverflow.com/questions/13246597/how-to-read-a-large-file-line-by-line
 function fm_file_lines($file) {
     $file = fopen($file, 'r');

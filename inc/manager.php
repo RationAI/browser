@@ -34,6 +34,10 @@ if (defined('FM_EMBED')) {
 }
 session_start();
 
+if (empty($_SESSION['token'])) {
+    $_SESSION['token'] = bin2hex(random_bytes(32));
+}
+
 if (empty($auth_users)) {
     $use_auth = false;
 }

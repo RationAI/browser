@@ -286,7 +286,6 @@ input[type=checkbox] {
 }
 
 .btn2{
-    color: var(--color-state-focus-border) !important;
     border-color: var(--color-state-focus-border) !important;
 }
 
@@ -409,6 +408,9 @@ input[type=checkbox] {
     right: 10px;
 }
 
+.not-yet-seen {
+    background: var(--color-bg-backdrop);
+}
 
 .edit-file-actions > a, .edit-file-actions > button {
     padding: 5px 15px;

@@ -3,7 +3,7 @@
 require_once "functions.php";
 
 global $global_input;
-if (isset($_POST["ajax"])) {
+if (isset($_POST["ajax"])) { //todo keep?
     $global_input = $_POST;
 }
 
@@ -29,8 +29,6 @@ switch ($data["ajax"]) {
         $wsi_filename = $data["filename"];
         $fileDir = "/" . fm_clean_path($data["directory"]);
         $relativeFileDir = fm_clean_path($data["relativeDirectory"]);
-
-
 
         function scan_json_def($full_path, $filename, $wsi_filename_text, $relativeFileDir, &$output) {
             $fname_text = pathinfo($filename, PATHINFO_FILENAME);
@@ -141,19 +139,18 @@ switch ($data["ajax"]) {
        for (let key in goal) {
            const spec = goal[key];
            viewerConfig.setShaderFor(spec.file, spec.default);
-           
+          
        }
        run = true;
        viewerConfig.open();
        break; 
    }
-   
+
    if (!run) {
        viewerConfig.open();
    }
 </script>
 </body>
-   
 
 EOF;
 
@@ -172,6 +169,21 @@ EOF;
             if (strlen($content) > 10e6)
                 die(json_encode(array("status"=>"error", "message" => "Data too big.")));
             if ($session->storeOne($file, $user, $content)) {
+                die(json_encode(array("status"=>"success")));
+            }
+            die(json_encode(array("status"=>"error", "message" => "Failed to write the session.")));
+        } catch (Exception $e) {
+            die(json_encode(array("status"=>"error", "message" => "Unknown error", "error" => $e)));
+        }
+    case "setSeen":
+        try {
+            require_once "UserStore.php";
+            $file = $data["filename"];
+            $user = $data["user"];
+
+            global $user_store;
+            $session = new UserStore($user_store);
+            if ($session->setSeen($user, $file)) {
                 die(json_encode(array("status"=>"success")));
             }
             die(json_encode(array("status"=>"error", "message" => "Failed to write the session.")));

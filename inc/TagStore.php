@@ -1,5 +1,7 @@
 <?php
-
+//Not used yet
+//
+//todo add metadata removal upon file deletion if used
 class TagStore extends SQLite3 {
 
     private static $_operators = array(
