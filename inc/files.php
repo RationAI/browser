@@ -463,7 +463,7 @@ $all_files_size = 0;
 
 
     <?php
-
+    global $wsi_analysis_endpoint;
     if ($wsi_analysis_endpoint) {
 echo <<<EOF
 <!--ANALYSIS FORM-->
@@ -650,6 +650,8 @@ EOF;
             }
         }
 
+        require_once "mirax.php";
+
         foreach ($files as $file_data) {
             $fname = $file_data[0];
 
@@ -691,11 +693,19 @@ EOF;
                     }
                 }
 
+                //strip tiff to get the mirax file path
+                $tiff_meta = mirax_read_meta($full_path);
+
+                $level_0 = $tiff_meta["LAYER_0_LEVEL_0_SECTION"] or [];
+                $micron_x = $level_0["MICROMETER_PER_PIXEL_X"] or -1;
+                $micron_y = $level_0["MICROMETER_PER_PIXEL_Y"] or -1;
+
                 $img = $image_preview_url_maker($full_wsi_path);
                 $img = "<img class='mr-2 tiff-preview' src=\"$img\">";
                 $onimageclick = "onclick=\"viewerConfig.setTissue('$full_wsi_path');\"";
                 $actions="
-<a href=\"?ajax=runDefaultVisualization&filename={$fname}&directory={$dirpath}&relativeDirectory={$wsi_dirpath}\">Open As Default</a> $not_yet_seen
+<span id='{$full_wsi_path}-meta' style='display: none' data-microns-x='$micron_x' data-microns-y='$micron_y'></span>
+<a href=\"?ajax=runDefaultVisualization&filename={$fname}&directory={$dirpath}&relativeDirectory={$wsi_dirpath}&microns={$micron_x}\">Open As Default</a> $not_yet_seen
 <br><br><a $onimageclick class='pointer'>Add as background.</a>
 <br><a onclick=\"viewerConfig.setShaderFor('$full_wsi_path');\" class='pointer'>Add as layer.</a>";
                 $title_tags = "onclick=\"go('$user', false, '$fname', '$full_wsi_path');\" class=\"pointer\"";
@@ -878,13 +888,33 @@ function fm_show_nav_path($path)
 <!--            <span class="navbar-toggler-icon"></span>-->
 <!--        </button>-->
         <div class="collapse navbar-collapse" style="text-align: right;" id="navbarTogglerDemo02">
-        <div class="navbar-nav float-right ml-auto">
+        <div class="navbar-nav float-right ml-auto flex-row d-flex flex-items-center">
 <!--            --><?php //if (!FM_READONLY): ?>
 <!--                <li class="nav-item"><a class="nav-link mx-1" title="Search" href="javascript:showSearch('--><?php //echo urlencode(FM_PATH) ?><!--')"><i class="fa fa-search fa-fw"></i> Search</a></li>-->
 <!--                <li class="nav-item"><a class="nav-link mx-1" title="Upload files" href="?p=--><?php //echo urlencode(FM_PATH) ?><!--&amp;upload"><i class="fa fa-cloud-upload fa-fw" aria-hidden="true"></i> Upload Files</a></li>-->
 <!--                <li class="nav-item"><a class="nav-link mx-1" title="New folder" href style="outline: none;" data-toggle="modal" data-target="#createNewItem"><i class="fa fa-plus-square fa-fw"></i> New Item</a></li>-->
 <!--                <li class="nav-item"><a href="?toggleTree=true" class="nav-link mx-1" title="Toggle Directories List"><i class="fa fa-eye-slash fa-fw"></i> Toggle Tree View</a></li>-->
 <!--            --><?php //endif; ?>
+
+            <?php
+            //todo dirty: analysis status
+            global $wsi_status_full_endpoint;
+            if ($wsi_status_full_endpoint) {
+                try {
+                    $data = json_decode(file_get_contents($wsi_status_full_endpoint), true);
+                    if ($data["status"] === "running") {
+                        echo '<span class="State State--closed mx-1">Analysis Running</span>';
+                    } else if ($data["status"] === "ready") {
+                        echo '<span class="State State--open mx-1">Analysis Idle</span>';
+                    }
+                } catch (Exception $e) {
+                    //pass
+                }
+            }
+
+            ?>
+
+
             <?php if (FM_USE_AUTH): ?><li class="nav-item"><a class="nav-link ml-1" title="Logout" href="?logout=1"><i class="fa fa-sign-out fa-fw" aria-hidden="true"></i> Log Out</a></li><?php endif; ?>
         </div>
         </div>

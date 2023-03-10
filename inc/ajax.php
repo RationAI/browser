@@ -30,7 +30,8 @@ switch ($data["ajax"]) {
         $fileDir = "/" . fm_clean_path($data["directory"]);
         $relativeFileDir = fm_clean_path($data["relativeDirectory"]);
 
-        function scan_json_def($full_path, $filename, $wsi_filename_text, $relativeFileDir, &$output) {
+        function scan_json_def($full_path, $filename, $wsi_filename_text, $relativeFileDir, &$output)
+        {
             $fname_text = pathinfo($filename, PATHINFO_FILENAME);
 
             //called twice to make sure, so
@@ -100,7 +101,7 @@ switch ($data["ajax"]) {
                 return $a->order - $b->order;
             });
 
-            foreach ($goal as $name=>$spec) {
+            foreach ($goal as $name => $spec) {
                 if (isset($spec->default) && $spec->default === false) {
                     if ($i < count($default_vis)) {
                         $spec->default = $default_vis[$i];
@@ -121,6 +122,7 @@ switch ($data["ajax"]) {
 
    </script>
    </head><body>
+<span id='$relativeFileDir/$wsi_filename-meta' style='display: none' data-microns-x='{$data["microns"]}' data-microns-y=''></span>
    <script>
       const data = $shader_data;
    const tissuePath = '$relativeFileDir/$wsi_filename';
@@ -139,7 +141,6 @@ switch ($data["ajax"]) {
        for (let key in goal) {
            const spec = goal[key];
            viewerConfig.setShaderFor(spec.file, spec.default);
-          
        }
        run = true;
        viewerConfig.open();
@@ -167,13 +168,13 @@ EOF;
             $session = new SessionStore($session_store);
 
             if (strlen($content) > 10e6)
-                die(json_encode(array("status"=>"error", "message" => "Data too big.")));
+                die(json_encode(array("status" => "error", "message" => "Data too big.")));
             if ($session->storeOne($file, $user, $content)) {
-                die(json_encode(array("status"=>"success")));
+                die(json_encode(array("status" => "success")));
             }
-            die(json_encode(array("status"=>"error", "message" => "Failed to write the session.")));
+            die(json_encode(array("status" => "error", "message" => "Failed to write the session.")));
         } catch (Exception $e) {
-            die(json_encode(array("status"=>"error", "message" => "Unknown error", "error" => $e)));
+            die(json_encode(array("status" => "error", "message" => "Unknown error", "error" => $e)));
         }
     case "setSeen":
         try {
@@ -184,15 +185,16 @@ EOF;
             global $user_store;
             $session = new UserStore($user_store);
             if ($session->setSeen($user, $file)) {
-                die(json_encode(array("status"=>"success")));
+                die(json_encode(array("status" => "success")));
             }
-            die(json_encode(array("status"=>"error", "message" => "Failed to write the session.")));
+            die(json_encode(array("status" => "error", "message" => "Failed to write the session.")));
         } catch (Exception $e) {
-            die(json_encode(array("status"=>"error", "message" => "Unknown error", "error" => $e)));
+            die(json_encode(array("status" => "error", "message" => "Unknown error", "error" => $e)));
         }
     case "search":
         $result = array();
-        function searchFiles($path) {
+        function searchFiles($path)
+        {
             require_once "files.php";
             $parent = fm_get_parent_path(FM_PATH);
             global $result;

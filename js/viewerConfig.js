@@ -249,7 +249,7 @@ class ViewerConfig {
         }
     }
 
-    _setImportShaderFor(dataPath, shaderType) {
+    _ensureVisExists() {
         let vis = this.props.data.visualizations;
         if (!vis) {
             this.props.data.visualizations = vis = [{
@@ -258,6 +258,11 @@ class ViewerConfig {
             }];
         }
         vis = vis[0];
+        return vis;
+    }
+
+    _setImportShaderFor(dataPath, shaderType) {
+        const vis = this._ensureVisExists();
 
         if (vis.shaders[dataPath]) {
             if (typeof shaderType === "string") {
@@ -308,9 +313,17 @@ class ViewerConfig {
     }
 
     _setImportTissue(tissuePath) {
+        let microns = undefined;
+        const meta = document.getElementById(`${tissuePath}-meta`);
+        if (meta) {
+            microns = Number.parseFloat(meta.dataset.micronsX); //todo what about Y
+            if (microns < 0) microns = undefined;
+        }
+
         this.props.data.background = [{
             dataReference: this._insertImageData(tissuePath),
-            "lossless": false
+            lossless: false,
+            microns: microns
         }];
         this.checkIsVisible();
     }
@@ -327,6 +340,36 @@ class ViewerConfig {
 background: linear-gradient(0deg, var(--color-bg-primary) 0%, transparent 100%);"></div>
 <h3 class="position-absolute bottom-0 f3-light mx-3 my-2 no-wrap overflow-hidden">${filename}</h3>
 `;
+    }
+
+    _openExternalConfigurator(shaderId) {
+        const theWindow = window.open('/visualization/refactor/configurator.php',  //todo hardcoded
+                'config', "height=550,width=850"),
+            theDoc = theWindow.document;
+        //    theScript = document.createElement('script');
+
+        // const selfRef = this.props.windowName;
+        // function injected() {
+        //     window.opener[`${selfRef}`]
+        // }
+        // theScript.innerHTML = 'window.onload = ' + injected.toString() + ';';
+        // theDoc.body.appendChild(theScript);
+
+        const _this = this;
+        theWindow.onload = function () {
+            theWindow.runConfigurator(config => {
+                _this._recordExternalConfig(shaderId, config);
+                window.console.log(config);
+                theWindow.close();
+            });
+        };
+    }
+
+    _recordExternalConfig(shaderId, config) {
+        //todo unsafe assignments?
+        const vis = this._ensureVisExists();
+        vis.shaders[shaderId] = config;
+        document.getElementById('viewer-config-shader-select-'+shaderId).value = config.type;
     }
 
     _setRenderLayer(dataPath) {
@@ -350,10 +393,9 @@ background: linear-gradient(0deg, var(--color-bg-primary) 0%, transparent 100%);
 <span class="material-icons position-absolute left-0 pointer top-0" onclick="${this.props.windowName}._unsetLayer(this);">close</span>
 <img class="banner-image" src="${this.imagePreviewMaker(dataPath)}">
 <h4 class="position-absolute bottom-0 f4-light mx-3 my-2 no-wrap overflow-hidden">${filename}</h4>
-<select class="viewer-config-shader-select" style="    position: absolute;
-    top: 0;
-    right: 0;"
+<select class="viewer-config-shader-select position-absolute top-4 right-0" id="viewer-config-shader-select-${dataPath}"
 onchange="${this.props.windowName}.setShaderFor('${dataPath}', this.value);">${shaderOpts}</select>
+<button class="btn btn-sm position-absolute top-0 right-0" onclick="${this.props.windowName}._openExternalConfigurator('${dataPath}')">Configure shader</button>
 `;
         document.getElementById('viewer-config-shader-setup').appendChild(newElem);
     }

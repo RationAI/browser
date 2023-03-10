@@ -100,6 +100,9 @@ $GLOBALS['exclude_folders'] = array(
 //Path to the analysis enpoint, leave as false if you don't know
 $wsi_analysis_endpoint = false;
 
+//must be full url
+$wsi_status_full_endpoint = false;
+
 //Require authentication for write operations
 $require_auth = false;
 

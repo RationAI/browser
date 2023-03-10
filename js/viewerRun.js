@@ -66,9 +66,18 @@ function openHtmlExport(exported) {
 function loadFormData(user, newTab, title, image, ...dataArray) {
     let vis = {name: title, shaders: {}};
     user_settings.data.push(image);
+
+    let microns = undefined;
+    const meta = document.getElementById(`${image}-meta`);
+    if (meta) {
+        microns = Number.parseFloat(meta.dataset.micronsX); //todo what about Y
+        if (microns < 0) microns = undefined;
+    }
+
     user_settings.background.push({
         dataReference: 0,
-        lossless: false
+        lossless: false,
+        microns: microns
     });
 
     if (dataArray.length < 1) {
