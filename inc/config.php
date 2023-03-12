@@ -1,6 +1,6 @@
 <?php
 
-error_reporting(E_ERROR);
+error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
 //Default Image Server Preview URL Maker (for tif pyramid previews)
@@ -17,25 +17,6 @@ $lang = 'en';
 // Auth with login/password (set true/false to enable/disable it)
 $use_auth = false;
 
-// Users: array('Username' => 'Password', 'Username2' => 'Password2', ...), Password has to encripted into MD5
-$auth_users = array(
-    'root' => '827ccb0eea8a706c4c34a16891f84e7b' //12345
-);
-
-// Readonly users (usernames array)
-$readonly_users = array(
-
-);
-
-// User-dependent roots (default is $root_path)
-$users_root = array(
-
-);
-
-// User-dependent front-end roots (default is $frontend_root_path)
-$users_image_server_root = array(
-
-);
 
 // Show or hide files and folders that starts with a dot
 $show_hidden_files = false;
@@ -74,7 +55,7 @@ $root_url = '';
 
 // Root url for the source files (JS, assets)
 if (!isset($sources_url)) {
-    $sources_url = '';
+    $sources_url = '.';
 }
 
 // Server hostname. Can set manually if wrong
@@ -103,30 +84,26 @@ $wsi_analysis_endpoint = false;
 //must be full url
 $wsi_status_full_endpoint = false;
 
-//Require authentication for write operations
-$require_auth = false;
-
-//Path to the SQlite tag database file
-$tag_store = "/tags.sqlite";
-//Path to the SQlite sessions db file
-$session_store = "/sessions.sqlite";
-$user_store = "/users.sqlite";
-
 // OVERRIDE ALL PROPS WITH USER SETTINGS
 if (defined('FM_CONFIG') && is_file(FM_CONFIG) ) {
     include(FM_CONFIG);
 }
 
+
+// Path to the database repository root
+defined('XO_DB_ROOT') || define('XO_DB_ROOT', "../xo_db/");
+
+global $sources_url;
 // DEFINE ALL HARDCODED VALUES
 // where are php files to look for
-$php_path = $sources_url . '/inc';
+$php_path = $sources_url . 'inc';
 
 // path to this script
-$file_path = $sources_url . '/files.php';
+$file_path = $sources_url . 'files.php';
 
 // where are assets to look for
-$assets_path = $sources_url . '/assets';
+$assets_path = $sources_url . 'assets';
 
 // where are js files to look for
-$js_path = $sources_url . '/js';
+$js_path = $sources_url . 'js';
 

@@ -1,26 +1,36 @@
 <?php
 
-require_once "functions.php";
-
-global $global_input;
-if (isset($_POST["ajax"])) { //todo keep?
-    $global_input = $_POST;
+//relative difference of index.php wrt. file manager
+if (!defined('PATH_TO_IS_MANAGER')) {
+    define('PATH_TO_IS_MANAGER', '');
 }
 
-// get path
-$p = $_GET['p'] ?? ($global_input['p'] ?? '');
+function error($msg) {
+    echo json_encode((object)array(
+        "status" => "error",
+        "message" => $msg,
+    ));
+    die();
+}
 
+function send($data=null) {
+    $response = array("status" => "success");
+    if ($data !== null) $response["data"] = $data;
+    echo json_encode($response);
+    die();
+}
 
-$logged = !($use_auth && !isset($_SESSION['logged']));
-$user = $_SESSION['logged'] ?? '';
+set_exception_handler(function (Throwable $exception) {
+    error($exception->getMessage());
+});
 
-// clean path
-$p = fm_clean_path($p);
+//todo send AUTH data from viewer and perform auth if required
 
-// instead globals vars
-define('FM_PATH', $p);
-
-$data = isset($global_input["ajax"]) ? $global_input : $_GET;
+const FM_CONFIG = PATH_TO_IS_MANAGER . 'config.php';
+require PATH_TO_IS_MANAGER . 'inc/init.php';
+global $use_auth, $user, $user_id, $is_logged;
+$data = isset($_DATA["ajax"]) ? $_DATA : $_GET;
+if (!isset($data["ajax"])) error("No Ajax Command!");
 
 switch ($data["ajax"]) {
     case "runDefaultVisualization":
@@ -132,7 +142,7 @@ switch ($data["ajax"]) {
         data: '',
    });
    
-   viewerConfig.withUser('{$_SESSION["logged"]}').setTissue(tissuePath);
+   viewerConfig.withUser('$user_id').setTissue(tissuePath);
    
    let run = false;
    for (let goal of data) {
@@ -147,9 +157,7 @@ switch ($data["ajax"]) {
        break; 
    }
 
-   if (!run) {
-       viewerConfig.open();
-   }
+   if (!run) viewerConfig.open();
 </script>
 </body>
 
@@ -159,67 +167,59 @@ EOF;
 
     case "storeSession":
         try {
-            require_once "SessionStore.php";
             $content = $data["session"];
             $file = $data["filename"];
             $user = $data["user"];
 
-            global $session_store;
-            $session = new SessionStore($session_store);
+            if (strlen($content) > 10e6) error("Data too big.");
 
-            if (strlen($content) > 10e6)
-                die(json_encode(array("status" => "error", "message" => "Data too big.")));
-            if ($session->storeOne($file, $user, $content)) {
-                die(json_encode(array("status" => "success")));
-            }
-            die(json_encode(array("status" => "error", "message" => "Failed to write the session.")));
+            throw new Exception("not implemented");
+//           todo  if ($session->storeOne($file, $user, $content)) {
+//                send();
+//            }
+
+            send();
         } catch (Exception $e) {
-            die(json_encode(array("status" => "error", "message" => "Unknown error", "error" => $e)));
+            error($e->getMessage());
         }
+        break;
     case "setSeen":
         try {
-            require_once "UserStore.php";
             $file = $data["filename"];
-            $user = $data["user"];
-
-            global $user_store;
-            $session = new UserStore($user_store);
-            if ($session->setSeen($user, $file)) {
-                die(json_encode(array("status" => "success")));
-            }
-            die(json_encode(array("status" => "error", "message" => "Failed to write the session.")));
+            if ($user_id < 0) return;
+            xo_file_seen_by(basename($file), $user_id);
+            send();
         } catch (Exception $e) {
-            die(json_encode(array("status" => "error", "message" => "Unknown error", "error" => $e)));
+            error($e->getMessage());
         }
-    case "search":
-        $result = array();
-        function searchFiles($path)
-        {
-            require_once "files.php";
-            $parent = fm_get_parent_path(FM_PATH);
-            global $result;
-
-            $objects = is_readable($path) ? scandir($path) : array();
-            if (is_array($objects)) {
-                foreach ($objects as $file) {
-                    if ($file == '.' || $file == '..') {
-                        continue;
-                    }
-//todo respect?
-//                    if (!FM_SHOW_HIDDEN && substr($file, 0, 1) === '.') {
+//    case "search":
+//        $result = array();
+//        function searchFiles($path)
+//        {
+//            require_once PATH_TO_IS_MANAGER . "inc/files.php";
+//            $parent = fm_get_parent_path(FM_PATH);
+//            global $result;
+//
+//            $objects = is_readable($path) ? scandir($path) : array();
+//            if (is_array($objects)) {
+//                foreach ($objects as $file) {
+//                    if ($file == '.' || $file == '..') {
 //                        continue;
 //                    }
-                    $new_path = $path . '/' . $file;
-                    if (is_file($new_path)) {
-                        $result[] = $file;
-                    }
-                }
-            }
-        }
-
-        break;
-
+////todo respect?
+////                    if (!FM_SHOW_HIDDEN && substr($file, 0, 1) === '.') {
+////                        continue;
+////                    }
+//                    $new_path = $path . '/' . $file;
+//                    if (is_file($new_path)) {
+//                        $result[] = $file;
+//                    }
+//                }
+//            }
+//        }
+//
+//        break;
 
     default:
-        throw new Exception("Unknown ajax request call: " . $data["ajax"]);
+        error("Unknown ajax request call: " . $data["ajax"]);
 }

@@ -207,14 +207,7 @@ function fm_file_lines($file) {
     while (($line = fgets($file)) !== false) yield $line;
     fclose($file);
 }
-
-if (! function_exists('str_ends_with')) {
-    function str_ends_with(string $haystack, string $needle): bool
-    {
-        $needle_len = strlen($needle);
-        return ($needle_len === 0 || 0 === substr_compare($haystack, $needle, - $needle_len));
-    }
-}
+;
 
 /**
  * Clean path
@@ -417,10 +410,40 @@ function php_file_tree($directory) {
  * @param string $msg
  * @param string $status
  */
-function fm_set_msg($msg, $status = 'ok')
+function fm_set_msg($msg, $status = 'ok', $error=null)
 {
     $_SESSION['message'] = $msg;
     $_SESSION['status'] = $status;
+    $_SESSION['error'] = $error;
+}
+
+/**
+ * Show message from session
+ */
+function fm_show_message()
+{
+    if (isset($_SESSION['message'])) {
+        $class = isset($_SESSION['status']) ? $_SESSION['status'] : 'alert-success';
+        if($class == 'error'){
+            $class = 'alert-danger';
+        }
+        if($class == 'alert'){
+            $class = 'alert-info';
+        }
+        if($class == 'ok'){
+            $class = 'alert-success';
+        }
+
+        $error = "";
+        if (isset($_SESSION['error'])) {
+            $error = "<code>{$_SESSION['error']}</code>";
+            unset($_SESSION['error']);
+        }
+
+        echo '<div class="mt-2 mx-3 message-container ' . $class . '">' . $_SESSION['message'] . $error . '</div>';
+        unset($_SESSION['message']);
+        unset($_SESSION['status']);
+    }
 }
 
 /**

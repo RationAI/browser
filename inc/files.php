@@ -1,6 +1,14 @@
 <?php
 
-require_once "functions.php";
+// always use ?p=
+if (!isset($_GET['p'])) {
+    fm_redirect(FM_SELF_URL . '?p=');
+}
+
+// Show image here
+if (isset($_GET['img'])) {
+    fm_show_image($_GET['img']);
+}
 
 if(isset($_GET['toggleTree'])) {
     if ($_SESSION['treeHide'] == 'false') {
@@ -10,66 +18,48 @@ if(isset($_GET['toggleTree'])) {
     }
 }
 
-$is_https = isset($_SERVER['HTTPS']) && ($_SERVER['HTTPS'] == 'on' || $_SERVER['HTTPS'] == 1)
-    || isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] == 'https';
-
-$is_logged = isset($_SESSION['logged']);
-// clean and check $root_path
-if ($is_logged) {
-    if (isset($users_root[$_SESSION['logged']])) {
-        //re-define default root path
-        $root_path = $users_root[$_SESSION['logged']];
-    }
-    if (isset($users_image_server_root[$_SESSION['logged']])) {
-        //re-define image server root path
-        $image_server_root_path = $users_image_server_root[$_SESSION['logged']];
-    }
-}
-
-$root_path = rtrim($root_path, '\\/');
-$root_path = str_replace('\\', '/', $root_path);
-if (!@is_dir($root_path)) {
-    echo "<h1>Root path \"{$root_path}\" not found!</h1>";
-    exit;
-}
-
-// clean $root_url
-$root_url = fm_clean_path($root_url);
-$image_server_root_url = fm_clean_path($image_server_root_path);
-
-// abs path for site
-defined('FM_SHOW_HIDDEN') || define('FM_SHOW_HIDDEN', $show_hidden_files);
-defined('FM_ROOT_PATH') || define('FM_ROOT_PATH', $root_path);
-defined('FM_WSI_SERVER_PATH') || define('FM_WSI_SERVER_PATH', $image_server_root_url);
-defined('FM_ROOT_URL') || define('FM_ROOT_URL', ($is_https ? 'https' : 'http') . '://' . $http_host . (!empty($root_url) ? '/' . $root_url : ''));
-defined('FM_SELF_URL') || define('FM_SELF_URL', ($is_https ? 'https' : 'http') . '://' . $http_host . $_SERVER['PHP_SELF']);
-
-// logout
-if (isset($_GET['logout'])) {
-    unset($_SESSION['logged']);
-    unset($_SESSION['token']);
-    fm_redirect(FM_SELF_URL);
-}
-
-// Show image here
-if (isset($_GET['img'])) {
-    fm_show_image($_GET['img']);
-}
+global $use_auth, $user, $user_id, $is_logged;
 
 // Auth
 if ($use_auth) {
-    if (isset($_SESSION['logged'], $auth_users[$_SESSION['logged']])) {
+
+    if ($is_logged) {
         // Logged
-    } elseif (isset($_POST['fm_usr'], $_POST['fm_pwd'])) {
+    } elseif (isset($_DATA['fm_usr'], $_DATA['fm_pwd'])) {
         // Logging In
         sleep(1);
-        if (isset($auth_users[$_POST['fm_usr']]) && md5($_POST['fm_pwd']) === strtolower($auth_users[$_POST['fm_usr']])) {
-            $_SESSION['logged'] = $_POST['fm_usr'];
+        $logged = false;
+        try {
+            $user = xo_get_user_by_with_auth("name", $_DATA['fm_usr'], "xopat_browser");
+            $logged = md5($_DATA['fm_pwd']) === $user["secret"];
+            $_SESSION['logged'] = $user;
+        } catch (Exception $e) {
+            //pass
+        }
+        if ($logged) {
             fm_set_msg('You are logged in');
             fm_redirect(FM_SELF_URL . '?' . $_SERVER['QUERY_STRING']);
         } else {
             unset($_SESSION['logged']);
             fm_set_msg('Invalid Username / Password', 'error');
+            fm_redirect(FM_SELF_URL);
+        }
+
+    } elseif (isset($_DATA['fm_register_usr'], $_DATA['fm_register_pwd'])) {
+        // Registration
+        sleep(1);
+
+        try {
+            $_SESSION['logged'] = xo_add_user($_DATA['fm_register_usr'],
+                "default",
+                "xopat_browser",
+                md5($_DATA['fm_register_pwd']),
+                $_DATA['fm_register_email']
+            );
+            fm_redirect(FM_SELF_URL);
+        } catch (Exception $e) {
+            unset($_SESSION['logged']);
+            fm_set_msg('Unable to register: name or email already taken.', 'error', $e->getMessage());
             fm_redirect(FM_SELF_URL);
         }
     } else {
@@ -79,13 +69,13 @@ if ($use_auth) {
         ?>
 
         <div class="container" style="max-width: 600px; margin: 0 auto;">
+            <?php
+            fm_show_message();
+            ?>
             <form class="mt-5" action="" method="post" autocomplete="off">
                 <h1 class="f1-light">RationAI File Browser</h1>
                 <hr>
                 <div class="form-group mt-5">
-                    <?php
-                    fm_show_message();
-                    ?>
                     <input name="fm_usr" id="fm_usr" type="text" class="form-control" placeholder="Enter Username" required autocomplete="false">
                     <div class="invalid-feedback">
                         Username is required.
@@ -98,7 +88,30 @@ if ($use_auth) {
                     </div>
                 </div>
                 <input type="hidden" name="token" value="<?php echo htmlentities($_SESSION['token']); ?>" />
-                <button type="submit" class="btn btn-info py-2 px-4""><i class="fa fa-sign-in"></i> Log In</button>
+                <button type="submit" name="login" class="btn btn-info py-2 px-4""><i class="fa fa-sign-in"></i> Log In</button>
+            </form>
+            <br><hr><br>
+            <form class="mt-5" action="" method="post" autocomplete="off">
+                <h3 class="f3-light">Not yet a member? Register.</h3>
+                <div class="form-group mt-5">
+                    <input name="fm_register_usr" id="fm_register_usr" type="text" class="form-control" placeholder="Enter Username" required autocomplete="false">
+                    <div class="invalid-feedback">
+                        Username is required.
+                    </div>
+                </div>
+                <div class="form-group">
+                    <input name="fm_register_email" id="fm_register_email" type="email" class="form-control" placeholder="Enter Your Email" required autocomplete="false">
+                    <div class="invalid-feedback">
+                        Email is required.
+                    </div>
+                </div>
+                <div class="form-group">
+                    <input name="fm_register_pwd" id="fm_register_pwd" type="password" class="form-control" placeholder="Enter Password" required>
+                    <div class="invalid-feedback">
+                        Password is required.
+                    </div>
+                </div>
+                <button type="submit" name="register"  class="btn btn-info py-2 px-4""><i class="fa fa-sign-in"></i> Register </button>
             </form>
         </div>
         <?php
@@ -107,40 +120,7 @@ if ($use_auth) {
     }
 }
 
-defined('FM_LANG') || define('FM_LANG', $lang);
-defined('FM_EXTENSION') || define('FM_EXTENSION', $upload_extensions);
-defined('FM_TREEVIEW') || define('FM_TREEVIEW', $show_tree_view);
 
-define('FM_READONLY', !$require_auth ||
-    ($use_auth && !empty($readonly_users) && isset($_SESSION['logged']) && in_array($_SESSION['logged'], $readonly_users)));
-
-define('FM_IS_WIN', DIRECTORY_SEPARATOR == '\\');
-
-// always use ?p=
-if (!isset($_GET['p'])) {
-    fm_redirect(FM_SELF_URL . '?p=');
-}
-
-// get path
-$p = isset($_GET['p']) ? $_GET['p'] : (isset($_POST['p']) ? $_POST['p'] : '');
-
-// get search string
-$s = isset($_GET['s']) ? $_GET['s'] : (isset($_POST['s']) ? $_POST['s'] : '');
-
-// clean path
-$p = fm_clean_path($p);
-
-// instead globals vars
-define('FM_PATH', $p);
-define('FM_USE_AUTH', $use_auth);
-define('FM_SEARCH_QUERY', $s);
-
-defined('FM_ICONV_INPUT_ENC') || define('FM_ICONV_INPUT_ENC', $iconv_input_encoding);
-defined('FM_USE_HIGHLIGHTJS') || define('FM_USE_HIGHLIGHTJS', $use_highlightjs);
-defined('FM_HIGHLIGHTJS_STYLE') || define('FM_HIGHLIGHTJS_STYLE', $highlightjs_style);
-defined('FM_DATETIME_FORMAT') || define('FM_DATETIME_FORMAT', $datetime_format);
-
-unset($p, $s, $use_auth, $iconv_input_encoding, $use_highlightjs, $highlightjs_style);
 
 /*************************** ACTIONS ***************************/
 
@@ -171,9 +151,9 @@ if (isset($_GET['dl'])) {
     }
 }
 
-if (isset($_GET['del'], $_POST['token']) && !FM_READONLY) {
+if (isset($_GET['del'], $_DATA['token']) && !FM_READONLY) {
     $del = str_replace( '/', '', fm_clean_path( $_GET['del'] ) );
-    if ($del != '' && $del != '..' && $del != '.' && verifyToken($_POST['token'])) {
+    if ($del != '' && $del != '..' && $del != '.' && verifyToken($_DATA['token'])) {
         $path = FM_ROOT_PATH;
         if (FM_PATH != '') {
             $path .= '/' . FM_PATH;
@@ -211,92 +191,36 @@ if (!is_dir($path)) {
 // get parent folder
 $parent = fm_get_parent_path(FM_PATH);
 
-$folders = array();
-$files = array();
-function file_scan($path, $rel_path, $wsi_path, $filename_predicate, $max_recursion=-1, $recursion_count=0,
-                   $fname_append='', $pulls=array()) {
-
-    if ($recursion_count >= $max_recursion) return; //prevent recursion depth
-
-    global $folders, $files;
-
-    $new_pulls = array();
-    $objects = is_readable($path) ? scandir($path) : array();
-    if (file_exists("$path/.pull")) {
-        foreach (fm_file_lines("$path/.pull") as $line) {
-            $new_pulls[]=trim($line);
-        }
-    }
-
-    if (is_array($objects)) {
-        foreach ($objects as $file) {
-            $recursion = $recursion_count;
-
-            if ($file == '.' || $file == '..') {
-                continue;
-            }
-            if (!FM_SHOW_HIDDEN && substr($file, 0, 1) === '.') {
-                continue;
-            }
-
-            $new_path = $path . '/' . $file;
-            $valid_dir = is_dir($new_path) && !is_link($new_path) && !in_array($file, $GLOBALS['exclude_folders']);
-            $valid_file = true;
-
-            $will_pull = count($pulls) > 0;
-            if ($will_pull) {
-                $reducer = function ($file, $b) {
-                    if (!$file) return false;
-                    if (gettype($b) === "string" && str_ends_with($file, $b)) return false;
-                    return $file;
-                };
-                $valid_file = array_reduce($pulls, $reducer, $file) === false;
-            }
-
-            if (count($new_pulls) < 1) {
-                $recursion++; //pull does not count as a step
-            }
-
-            if ($filename_predicate($file, $new_path)) {
-                if ($valid_file && is_file($new_path)) {
-                    $files[] = array($file, $rel_path, $wsi_path, $fname_append);
-                } else if ($valid_dir && !$will_pull) {
-                    $folders[] = array($file, $rel_path, $wsi_path, $fname_append);
-                }
-            }
-
-            if ($valid_dir) {
-                $new_rp = $rel_path === '' ? $file : $rel_path . '/' . $file;
-                $new_fp = $wsi_path === '' ? $file : $wsi_path . '/' . $file;
-                file_scan($new_path, $new_rp, $new_fp, $filename_predicate, $max_recursion, $recursion, "$fname_append/$file", $new_pulls);
-            }
-        }
-    }
-} //
-
+require_once PATH_TO_IS_MANAGER . "tools/file_walker.php";
+$folders = $user_not_seen_files = $files = array();
+$clbck = function ($is_file, $item_name, $rel_path, $start_path, $wsi_path) {
+    global $files, $folders;
+    if ($is_file) $files[]= [$item_name, $start_path, $wsi_path, $rel_path];
+    else $folders[]= [$item_name, $start_path, $wsi_path, $rel_path];
+};
 if (empty(FM_SEARCH_QUERY)) {
-    $predicate = function ($filename, $filepath) {
-        return true;
-    };
+    $predicate = fn($a, $b) => true;
     //normal list browsing, search with one depth stack limit (current folder)
-    file_scan($path, $rel_path, $wsi_path, $predicate, 1, 0);
+    file_scan($path, $rel_path, $wsi_path, $clbck, $predicate, 1);
 } else {
-    //todo BFS with time limit instead...?
     $predicate = function ($filename, $filepath) {
         if (is_dir($filepath)) return false;
         $pattern = FM_SEARCH_QUERY;
         return preg_match("#$pattern#i", $filename);
     };
     //works only because we exclude folders, uses two child depth limit since performance drops significantly...
-    file_scan($path, $rel_path, $wsi_path, $predicate, 3, 0);
+    file_scan($path, $rel_path, $wsi_path, $clbck, $predicate, 3);
     fm_set_msg('Only 2 folders in depth are scanned due to many files - the list might be incomplete.', 'alert');
 }
 unset($predicate);
+unset($clbck);
 
 if (!empty($files)) {
     $key_extractor = function ($f) { return $f[0]; };
     $keys = array_map($key_extractor, $files);
     array_multisort($keys, SORT_NATURAL | SORT_FLAG_CASE, $files);
+
+    $user_not_seen_files = xo_file_list_not_seen_by_user($keys, $user_id);
 }
 if (!empty($folders)) {
     $key_extractor = function ($f) { return $f[0]; };
@@ -628,35 +552,12 @@ EOF;
 //            echo $e;
 //        }
 
-        $session = null;
-        try {
-            require_once "SessionStore.php";
-            global $session_store;
-            $session = new SessionStore($session_store);
-        } catch (Exception $e) {
-            //pass
-        }
-
-        $user = $_SESSION["logged"] ?? "";
-
-        $user_db = null;
-        if ($user) {
-            try {
-                require_once "UserStore.php";
-                global $user_store;
-                $user_db = new UserStore($user_store);
-            } catch (Exception $e) {
-                //pass
-            }
-        }
-
-        require_once "mirax.php";
-
+        require_once PATH_TO_IS_MANAGER . "inc/mirax.php";
         foreach ($files as $file_data) {
             $fname = $file_data[0];
 
             $rel_dirpath = $file_data[1];
-            $full_rel_path = "$rel_dirpath/$f";
+            $full_rel_path = "$rel_dirpath/$fname";
 
             $dirpath = FM_ROOT_PATH . '/' . $rel_dirpath;
             $full_path = $dirpath . '/' . $fname;
@@ -682,46 +583,53 @@ EOF;
             $not_yet_seen="";
 
             if ($is_tiff) {
-                if ($user_db) {
-                    try {
-                        if (!$user_db->checkSeen($user, "$rel_dirpath/$fname")->fetchArray(SQLITE3_ASSOC)) {
-                            $row_class .= "not-yet-seen";
-                            $not_yet_seen = "(not yet viewed)";
-                        }
-                    } catch (Exception $e) {
-                        //pass
+
+                foreach ($user_not_seen_files as $not_seen) {
+                    if ($user_not_seen_files["name"] == $fname) {
+                        $row_class .= "not-yet-seen";
+                        $not_yet_seen = "(not yet viewed)";
                     }
                 }
 
                 //strip tiff to get the mirax file path
-                $tiff_meta = mirax_read_meta($full_path);
+                $tiff_meta = []; // todo safely fail! not as of now -> mirax_read_meta($full_path);
+                if (count($tiff_meta) > 0) {
+                    $level_0 = $tiff_meta["LAYER_0_LEVEL_0_SECTION"];
+                    $micron_x = $level_0["MICROMETER_PER_PIXEL_X"];
+                    $micron_y = $level_0["MICROMETER_PER_PIXEL_Y"];
+                } else {
+                    $level_0 = [];
+                    $micron_x = -1;
+                    $micron_y = -1;
+                }
 
-                $level_0 = $tiff_meta["LAYER_0_LEVEL_0_SECTION"] or [];
-                $micron_x = $level_0["MICROMETER_PER_PIXEL_X"] or -1;
-                $micron_y = $level_0["MICROMETER_PER_PIXEL_Y"] or -1;
 
                 $img = $image_preview_url_maker($full_wsi_path);
                 $img = "<img class='mr-2 tiff-preview' src=\"$img\">";
                 $onimageclick = "onclick=\"viewerConfig.setTissue('$full_wsi_path');\"";
                 $actions="
 <span id='{$full_wsi_path}-meta' style='display: none' data-microns-x='$micron_x' data-microns-y='$micron_y'></span>
-<a href=\"?ajax=runDefaultVisualization&filename={$fname}&directory={$dirpath}&relativeDirectory={$wsi_dirpath}&microns={$micron_x}\">Open As Default</a> $not_yet_seen
+<a href=\"ajax.php?ajax=runDefaultVisualization&filename={$fname}&directory={$dirpath}&relativeDirectory={$wsi_dirpath}&microns={$micron_x}\">Open As Default</a> $not_yet_seen
 <br><br><a $onimageclick class='pointer'>Add as background.</a>
 <br><a onclick=\"viewerConfig.setShaderFor('$full_wsi_path');\" class='pointer'>Add as layer.</a>";
-                $title_tags = "onclick=\"go('$user', false, '$fname', '$full_wsi_path');\" class=\"pointer\"";
+                $title_tags = "onclick=\"go('$user_id', false, '$fname', '$full_wsi_path');\" class=\"pointer\"";
                 $title_prefix = "$title_prefix<i class='xopat'>&#xe802;</i>";
 
-                if ($session) {
-                    try {
-                        $ses_data = $session->readOne("$rel_dirpath/$fname", $user)->fetchArray(SQLITE3_ASSOC);
-                        if ($ses_data) {
-                            $exports = rawurlencode($ses_data["session"]);
-                            $actions .= "<br><a class='pointer' onclick='openHtmlExport(`$exports`)'> Open last session. </a>";
-                        }
-                    } catch (Exception $e) {
-                        //pass
-                    }
-                }
+
+
+
+//               TODO! if ($session) {
+//                    try {
+//                        $ses_data = $session->readOne("$rel_dirpath/$fname", $user)->fetchArray(SQLITE3_ASSOC);
+//                        if ($ses_data) {
+//                            $exports = rawurlencode($ses_data["session"]);
+//                            $actions .= "<br><a class='pointer' onclick='openHtmlExport(`$exports`)'> Open last session. </a>";
+//                        }
+//                    } catch (Exception $e) {
+//                        //pass
+//                    }
+//                }
+
             } else {
                 $img = $is_link ? 'fa fa-file-text-o' : fm_get_file_icon_class($fname);
                 $img = "<i class=\"$img\"></i>&nbsp;";
@@ -732,10 +640,11 @@ EOF;
             if (function_exists('posix_getpwuid') && function_exists('posix_getgrgid')) {
                 $owner = posix_getpwuid(fileowner($full_path));
                 $group = posix_getgrgid(filegroup($full_path));
-            } else {
-                $owner = array('name' => '?');
-                $group = array('name' => '?');
             }
+
+            if (!isset($owner["name"])) $owner = array('name' => '-');
+            if (!isset($group["name"])) $group = array('name' => '-');
+
             ?>
             <tr class="viewer-config-draggable <?php echo $row_class;?>" data-source="<?php echo $full_wsi_path; ?>">
 <!--                --><?php //if (!FM_READONLY): ?><!--<td><label><input type="checkbox" name="file[]" value="--><?php //echo fm_enc($fname) ?><!--"></label></td>--><?php //endif; ?>
@@ -829,8 +738,8 @@ EOF;
             viewerUrl: '<?php echo $viewer_url; ?>',
             containerId: "viewer-configurator",
             tiffPreviewMaker: dziImagePreviewMaker,
-            data: `<?php echo isset($_POST['viewer-config']) ? $_POST['viewer-config'] : ''; ?>`,
-        }).withUser('<?php echo $_SESSION['logged']; ?>');
+            data: `<?php echo $_DATA['viewer-config'] ?? ''; ?>`,
+        }).withUser(<?php echo $is_logged ? "'{$user["id"]}'" : "undefined"; ?>);
 
         document.getElementById('file-browser-form').addEventListener('submit', () => {
             document.getElementById('viewer-config').value = viewerConfig.export();
@@ -861,7 +770,6 @@ function fm_show_search_bar() {
  */
 function fm_show_nav_path($path)
 {
-    global $lang;
     ?>
     <nav class="navbar navbar-light bg-light navbar-expand-lg"">
 
@@ -922,28 +830,7 @@ function fm_show_nav_path($path)
     <?php
 }
 
-/**
- * Show message from session
- */
-function fm_show_message()
-{
-    if (isset($_SESSION['message'])) {
-        $class = isset($_SESSION['status']) ? $_SESSION['status'] : 'alert-success';
-        if($class == 'error'){
-            $class = 'alert-danger';
-        }
-        if($class == 'alert'){
-            $class = 'alert-info';
-        }
-        if($class == 'ok'){
-            $class = 'alert-success';
-        }
 
-        echo '<div class="mt-2 mx-3 message-container ' . $class . '">' . $_SESSION['message'] . '</div>';
-        unset($_SESSION['message']);
-        unset($_SESSION['status']);
-    }
-}
 
 /**
  * Show page header in Login Form
@@ -967,11 +854,11 @@ global $lang, $assets_path;
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <link rel="stylesheet" href="<?php echo $assets_path ?>/primer_css.css">
     <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-    <link rel="stylesheet" href="<?php echo $assets_path ?>/login.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="<?php echo $assets_path ?>/index.css">
     <link rel="apple-touch-icon" sizes="180x180" href="<?php echo $assets_path ?>/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="<?php echo $assets_path ?>/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="<?php echo $assets_path ?>/favicon-16x16.png">
-    <link rel="manifest" href="<?php echo $assets_path ?>/site.webmanifest">
     <link rel="mask-icon" href="<?php echo $assets_path ?>/safari-pinned-tab.svg" color="#5bbad5">
     <meta name="msapplication-TileColor" content="#da532c">
     <meta name="theme-color" content="#ffffff">
@@ -981,15 +868,14 @@ global $lang, $assets_path;
 
 
 <div id="wrapper" class="m-5">
-
     <?php
-    }
+}
 
-    /**
-     * Show page footer in Login Form
-     */
-    function fm_show_footer_login()
-    {
+/**
+ * Show page footer in Login Form
+ */
+function fm_show_footer_login()
+{
     ?>
 </div>
 <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
@@ -1029,7 +915,6 @@ global $lang, $assets_path, $js_path;
     <link rel="apple-touch-icon" sizes="180x180" href="<?php echo $assets_path ?>/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="<?php echo $assets_path ?>/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="<?php echo $assets_path ?>/favicon-16x16.png">
-<!--    <link rel="manifest" href="<?php echo $assets_path ?>/site.webmanifest">-->
     <link rel="mask-icon" href="<?php echo $assets_path ?>/safari-pinned-tab.svg" color="#5bbad5">
 
     <?php if (isset($_GET['view']) && FM_USE_HIGHLIGHTJS): ?>
@@ -1198,16 +1083,8 @@ global $lang, $assets_path, $js_path;
     if (document.getElementById("file-tree-view")) {
         var tableViewHt = document.getElementById("main-table").offsetHeight - 2;
         document.getElementById("file-tree-view").setAttribute("style", "height:" + tableViewHt + "px")
-    }
-    ;
+    };
 
-    if ("serviceWorker" in navigator) {
-        navigator.serviceWorker.register("<?php echo $js_path ?>/serviceworker.js").then(function(registration){
-            console.log("Service Worker registered with scope:", registration);
-        }).catch(function(err) {
-            console.log("Service worker registration failed:", err);
-        });
-    }
 </script>
 <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
