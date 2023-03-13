@@ -1,8 +1,19 @@
 <?php
 
-// Make sure defined, if included directly, define as if included from root
+//We
+//relative difference of index.php wrt. file manager
 if (!defined('PATH_TO_IS_MANAGER')) {
-    define('PATH_TO_IS_MANAGER', '../');
+    die("Cannot include the file directly without providing PATH_TO_IS_MANAGER global variable with path to the browser repository root.");
+}
+
+//for debug see what's going on
+set_exception_handler(function ($exception) {
+    echo "Uncaught exception: " , $exception->getMessage(), "\n";
+});
+
+//custom configuration file
+if (!defined('FM_CONFIG') && is_file(PATH_TO_IS_MANAGER . 'config.php')) {
+    define('FM_CONFIG', PATH_TO_IS_MANAGER . 'config.php');
 }
 
 // Parse input data
@@ -106,7 +117,7 @@ define('FM_SEARCH_QUERY', $s);
 
 defined('FM_LANG') || define('FM_LANG', $lang);
 defined('FM_EXTENSION') || define('FM_EXTENSION', $upload_extensions);
-defined('FM_TREEVIEW') || define('FM_TREEVIEW', $show_tree_view);
+defined('FM_TREEVIEW') || define('FM_TREEVIEW', false); //todo support?
 
 
 defined('FM_ICONV_INPUT_ENC') || define('FM_ICONV_INPUT_ENC', $iconv_input_encoding);

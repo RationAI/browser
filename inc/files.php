@@ -607,11 +607,15 @@ EOF;
                 $img = $image_preview_url_maker($full_wsi_path);
                 $img = "<img class='mr-2 tiff-preview' src=\"$img\">";
                 $onimageclick = "onclick=\"viewerConfig.setTissue('$full_wsi_path');\"";
-                $actions="
-<span id='{$full_wsi_path}-meta' style='display: none' data-microns-x='$micron_x' data-microns-y='$micron_y'></span>
-<a href=\"ajax.php?ajax=runDefaultVisualization&filename={$fname}&directory={$dirpath}&relativeDirectory={$wsi_dirpath}&microns={$micron_x}\">Open As Default</a> $not_yet_seen
-<br><br><a $onimageclick class='pointer'>Add as background.</a>
-<br><a onclick=\"viewerConfig.setShaderFor('$full_wsi_path');\" class='pointer'>Add as layer.</a>";
+
+
+                $actions="<span id='{$full_wsi_path}-meta' style='display: none' data-microns-x='$micron_x' data-microns-y='$micron_y'></span>
+<a href=\"ajax.php?ajax=runDefaultVisualization&filename={$fname}&directory={$dirpath}&relativeDirectory={$wsi_dirpath}&microns={$micron_x}\">Open As Default</a> $not_yet_seen";
+//todo enable only for certain users
+//                $actions.="<br><br><a $onimageclick class='pointer'>Add as background.</a>
+//<br><a onclick=\"viewerConfig.setShaderFor('$full_wsi_path');\" class='pointer'>Add as layer.</a>";
+//
+
                 $title_tags = "onclick=\"go('$user_id', false, '$fname', '$full_wsi_path');\" class=\"pointer\"";
                 $title_prefix = "$title_prefix<i class='xopat'>&#xe802;</i>";
 

@@ -1,5 +1,16 @@
 <?php
 
+/**
+ * Configure Your Own Browser interaction. The default (commented out)
+ * works for our docker system. This is an example configuration file.
+ * The contents are commented out.
+ *
+ * Either define a new config.php file at the root of the repository,
+ * or provide the path to a configuration file as
+ *     define('FM_CONFIG', [...path to the configuration file...]);
+ *
+ *
+
 // Default language
 $lang = 'en';
 
@@ -33,6 +44,8 @@ $root_path = '/var/www/data/';
 // Path to the database repository root
 const XO_DB_ROOT = "../xo_db/";
 
+//Relative or absolute path to the viewer source src folder. Only required for shader configurator.
+const XOPAT_SOURCES = '../../xopat/src/';
 
 // Default root for the WSI server
 $image_server_root_path = '';
@@ -61,9 +74,6 @@ $datetime_format = 'd.m.y H:i';
 // allowed upload file extensions
 $upload_extensions = ''; // 'gif,png,jpg'
 
-// show or hide the left side tree view
-$show_tree_view = false;
-
 //Array of folders excluded from listing
 $GLOBALS['exclude_folders'] = array(
     '.git', 'iipimage-martin', 'is',
@@ -76,3 +86,5 @@ $image_preview_url_maker = function ($file) {
 
 //Url of the Viewer
 $viewer_url = "http://localhost:8080/xopat/index.php";
+
+*/

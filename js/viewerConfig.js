@@ -343,7 +343,7 @@ background: linear-gradient(0deg, var(--color-bg-primary) 0%, transparent 100%);
     }
 
     _openExternalConfigurator(shaderId) {
-        const theWindow = window.open('/visualization/refactor/configurator.php',  //todo hardcoded
+        const theWindow = window.open('shader_configurator.php',
                 'config', "height=550,width=850"),
             theDoc = theWindow.document;
         //    theScript = document.createElement('script');

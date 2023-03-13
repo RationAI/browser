@@ -4,6 +4,8 @@
 if (!defined('PATH_TO_IS_MANAGER')) {
     define('PATH_TO_IS_MANAGER', '');
 }
+require PATH_TO_IS_MANAGER . 'inc/init.php';
+
 
 function error($msg) {
     echo json_encode((object)array(
@@ -25,9 +27,6 @@ set_exception_handler(function (Throwable $exception) {
 });
 
 //todo send AUTH data from viewer and perform auth if required
-
-const FM_CONFIG = PATH_TO_IS_MANAGER . 'config.php';
-require PATH_TO_IS_MANAGER . 'inc/init.php';
 global $use_auth, $user, $user_id, $is_logged;
 $data = isset($_DATA["ajax"]) ? $_DATA : $_GET;
 if (!isset($data["ajax"])) error("No Ajax Command!");
