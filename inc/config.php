@@ -72,6 +72,7 @@ $GLOBALS['exclude_folders'] = array(
 );
 
 //Path to the analysis enpoint, leave as false if you don't know
+//todo test interaction
 $wsi_analysis_endpoint = false;
 
 //must be full url
@@ -83,7 +84,7 @@ if (defined('FM_CONFIG') && is_file(FM_CONFIG) ) {
 }
 
 //Relative or absolute path to the viewer source src folder. Only required for shader configurator.
-defined('XOPAT_SOURCES') || define('XOPAT_SOURCES', '../xopat/src/');
+defined('XOPAT_SOURCES') || define('XOPAT_SOURCES', 'http://localhost:8080/xopat/user_setup.php');
 
 // Path to the database repository root
 defined('XO_DB_ROOT') || define('XO_DB_ROOT', "../xo_db/");

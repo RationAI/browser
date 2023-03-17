@@ -28,7 +28,7 @@ function fireForm(event, url, question) {
 
 class ViewerConfig {
 
-    constructor(props) {
+    constructor(props, interactiveShaderConfigUrl) {
         this.props = props;
         this.props.data = this.props.data || {};
         this.imagePreviewMaker = (file) => {
@@ -38,6 +38,7 @@ class ViewerConfig {
             // }
             return this.props.tiffPreviewMaker?.(file) || file;
         }
+        this.interactiveShaderConfigUrl = interactiveShaderConfigUrl;
         this.visible = false;
         this.hasVisualOutput = false;
         if (this.props.containerId) {
@@ -343,7 +344,7 @@ background: linear-gradient(0deg, var(--color-bg-primary) 0%, transparent 100%);
     }
 
     _openExternalConfigurator(shaderId) {
-        const theWindow = window.open('shader_configurator.php',
+        const theWindow = window.open(this.interactiveShaderConfigUrl,
                 'config', "height=550,width=850"),
             theDoc = theWindow.document;
         //    theScript = document.createElement('script');

@@ -608,7 +608,6 @@ EOF;
                 $img = "<img class='mr-2 tiff-preview' src=\"$img\">";
                 $onimageclick = "onclick=\"viewerConfig.setTissue('$full_wsi_path');\"";
 
-
                 $actions="<span id='{$full_wsi_path}-meta' style='display: none' data-microns-x='$micron_x' data-microns-y='$micron_y'></span>
 <a href=\"ajax.php?ajax=runDefaultVisualization&filename={$fname}&directory={$dirpath}&relativeDirectory={$wsi_dirpath}&microns={$micron_x}\">Open As Default</a> $not_yet_seen";
 //todo enable only for certain users
@@ -743,7 +742,7 @@ EOF;
             containerId: "viewer-configurator",
             tiffPreviewMaker: dziImagePreviewMaker,
             data: `<?php echo $_DATA['viewer-config'] ?? ''; ?>`,
-        }).withUser(<?php echo $is_logged ? "'{$user["id"]}'" : "undefined"; ?>);
+        }, '<?php echo XOPAT_SOURCES; ?>').withUser(<?php echo $is_logged ? "'{$user["id"]}'" : "undefined"; ?>);
 
         document.getElementById('file-browser-form').addEventListener('submit', () => {
             document.getElementById('viewer-config').value = viewerConfig.export();
