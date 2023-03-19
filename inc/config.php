@@ -72,8 +72,7 @@ $GLOBALS['exclude_folders'] = array(
 );
 
 //Path to the analysis enpoint, leave as false if you don't know
-//todo test interaction
-$wsi_analysis_endpoint = false;
+$wsi_analysis_endpoint = "http://localhost:8081/importer/server/analysis.php";
 
 //must be full url
 $wsi_status_full_endpoint = false;

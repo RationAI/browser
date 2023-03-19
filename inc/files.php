@@ -391,8 +391,9 @@ $all_files_size = 0;
     if ($wsi_analysis_endpoint) {
 echo <<<EOF
 <!--ANALYSIS FORM-->
-    <form action="$wsi_analysis_endpoint" method="post" id="uploader" enctype="multipart/form-data">
-        <input type="hidden" class="form-control" id="request-analysis" name="" value=""/>
+    <form action="$wsi_analysis_endpoint" method="post" id="analysis-form" enctype="multipart/form-data">
+        <input type="hidden" class="form-control" name="" value=""/>
+        <input type="hidden" class="form-control" name="" value=""/>
     </form>
 EOF;
 
@@ -518,13 +519,17 @@ EOF;
 <!--                       target="_blank"><i class="fa fa-link" aria-hidden="true"></i></a>-->
 
                     <?php
-                    if ($wsi_analysis_endpoint && (FM_PATH == "" || FM_PATH == "/")) {
-                        echo <<<EOF
-                        <input type="submit" form="uploader" style="cursor: pointer" id="send-one-file-analysis" onclick="
-let form = document.getElementById('uploader'); form.children[0].setAttribute('name', 'request'); form.children[0].setAttribute('value', '$f');                       
-                        " name="command" value="Run analysis" class="form-control"/>
-EOF;
-                    }
+
+                    //todo analysis not really possible biopsy unknown
+//                    if ($wsi_analysis_endpoint && (FM_PATH == "" || FM_PATH == "/")) {
+//                        echo <<<EOF
+//                        <input type="submit" form="analysis-form" style="cursor: pointer" id="send-one-file-analysis" onclick="
+//let form = document.getElementById('analysis-form'); form.children[0].setAttribute('name', 'biopsy'); form.children[0].setAttribute('value', '$f');
+////todo flexible selection of algorithms
+//form.children[1].setAttribute('name', 'algorithm'); form.children[1].setAttribute('value', JSON.stringify({name:'prostate-prediction'}));
+//                        " name="command" value="Run analysis" class="form-control"/>
+//EOF;
+//                    }
                     ?>
                 </td>
             </tr>
@@ -678,8 +683,10 @@ EOF;
 
                     } else if ($wsi_analysis_endpoint && strtolower($ext) === "mrxs") {
                         echo <<<EOF
-                        <input type="submit" form="uploader" style="cursor: pointer" id="send-one-file-analysis" onclick="
-let form = document.getElementById('uploader'); form.children[0].setAttribute('name', 'file'); form.children[0].setAttribute('value', '$full_path');
+                        <input type="submit" form="analysis-form" style="cursor: pointer" id="send-one-file-analysis" onclick="
+let form = document.getElementById('analysis-form'); form.children[0].setAttribute('name', 'file'); form.children[0].setAttribute('value', '$fname');
+//todo flexible selection of algorithm
+form.children[1].setAttribute('name', 'algorithm'); form.children[1].setAttribute('value', JSON.stringify({name:'prostate-prediction'}));   
                         " name="command" value="Run analysis" class="form-control"/>
 EOF;
                     }  else { ?>
@@ -808,20 +815,20 @@ function fm_show_nav_path($path)
 <!--            --><?php //endif; ?>
 
             <?php
-            //todo dirty: analysis status
-            global $wsi_status_full_endpoint;
-            if ($wsi_status_full_endpoint) {
-                try {
-                    $data = json_decode(file_get_contents($wsi_status_full_endpoint), true);
-                    if ($data["status"] === "running") {
-                        echo '<span class="State State--closed mx-1">Analysis Running</span>';
-                    } else if ($data["status"] === "ready") {
-                        echo '<span class="State State--open mx-1">Analysis Idle</span>';
-                    }
-                } catch (Exception $e) {
-                    //pass
-                }
-            }
+
+//            global $wsi_status_full_endpoint;
+//            if ($wsi_status_full_endpoint) {
+//                try {
+//                    $data = json_decode(file_get_contents($wsi_status_full_endpoint), true);
+//                    if ($data["status"] === "running") {
+//                        echo '<span class="State State--closed mx-1">Analysis Running</span>';
+//                    } else if ($data["status"] === "ready") {
+//                        echo '<span class="State State--open mx-1">Analysis Idle</span>';
+//                    }
+//                } catch (Exception $e) {
+//                    //pass
+//                }
+//            }
 
             ?>
 
