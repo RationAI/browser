@@ -18,20 +18,18 @@ if(isset($_GET['toggleTree'])) {
     }
 }
 
-global $use_auth, $user, $user_id, $is_logged;
-
 // Auth
-if ($use_auth) {
+if (_FM_USE_AUTH) {
 
-    if ($is_logged) {
+    if (FM_LOGGED) {
         // Logged
-    } elseif (isset($_DATA['fm_usr'], $_DATA['fm_pwd'])) {
+    } elseif (isset($_POST['fm_usr'], $_POST['fm_pwd'])) {
         // Logging In
         sleep(1);
         $logged = false;
         try {
-            $user = xo_get_user_by_with_auth("name", $_DATA['fm_usr'], "xopat_browser");
-            $logged = md5($_DATA['fm_pwd']) === $user["secret"];
+            $user = xo_get_user_by_with_auth("name", $_POST['fm_usr'], "xopat_browser");
+            $logged = md5($_POST['fm_pwd']) === $user["secret"];
             $_SESSION['logged'] = $user;
         } catch (Exception $e) {
             //pass
@@ -45,16 +43,16 @@ if ($use_auth) {
             fm_redirect(FM_SELF_URL);
         }
 
-    } elseif (isset($_DATA['fm_register_usr'], $_DATA['fm_register_pwd'])) {
+    } elseif (isset($_POST['fm_register_usr'], $_POST['fm_register_pwd'])) {
         // Registration
         sleep(1);
 
         try {
-            $_SESSION['logged'] = xo_add_user($_DATA['fm_register_usr'],
+            $_SESSION['logged'] = xo_add_user($_POST['fm_register_usr'],
                 "default",
                 "xopat_browser",
-                md5($_DATA['fm_register_pwd']),
-                $_DATA['fm_register_email']
+                md5($_POST['fm_register_pwd']),
+                $_POST['fm_register_email']
             );
             fm_redirect(FM_SELF_URL);
         } catch (Exception $e) {
@@ -151,9 +149,9 @@ if (isset($_GET['dl'])) {
     }
 }
 
-if (isset($_GET['del'], $_DATA['token']) && !FM_READONLY) {
+if (isset($_GET['del'], $_POST['token']) && !FM_READONLY) {
     $del = str_replace( '/', '', fm_clean_path( $_GET['del'] ) );
-    if ($del != '' && $del != '..' && $del != '.' && verifyToken($_DATA['token'])) {
+    if ($del != '' && $del != '..' && $del != '.' && verifyToken($_POST['token'])) {
         $path = FM_ROOT_PATH;
         if (FM_PATH != '') {
             $path .= '/' . FM_PATH;
@@ -220,7 +218,7 @@ if (!empty($files)) {
     $keys = array_map($key_extractor, $files);
     array_multisort($keys, SORT_NATURAL | SORT_FLAG_CASE, $files);
 
-    $user_not_seen_files = xo_file_list_not_seen_by_user($keys, $user_id);
+    $user_not_seen_files = xo_file_list_not_seen_by_user($keys, FM_USER_ID);
 }
 if (!empty($folders)) {
     $key_extractor = function ($f) { return $f[0]; };
@@ -387,16 +385,15 @@ $all_files_size = 0;
 
 
     <?php
-    global $wsi_analysis_endpoint;
-    if ($wsi_analysis_endpoint) {
+    if (FM_WSI_ANALYSIS_PAGE) {
+        $url = FM_WSI_ANALYSIS_PAGE;
 echo <<<EOF
 <!--ANALYSIS FORM-->
-    <form action="$wsi_analysis_endpoint" method="post" id="analysis-form" enctype="multipart/form-data">
+    <form action="$url" method="post" id="analysis-form" enctype="multipart/form-data">
         <input type="hidden" class="form-control" name="" value=""/>
         <input type="hidden" class="form-control" name="" value=""/>
     </form>
 EOF;
-
     }
 
     ?>
@@ -413,7 +410,7 @@ EOF;
             <div class="tree-title"><i class="fa fa-align-left fa-fw"></i> Browse</div>
             <?php
             //file tre view
-            //echo php_file_tree($root_path, "javascript:alert('You clicked on [link]');");
+            //echo php_file_tree(FM_BROWSE_ROOT, "javascript:alert('You clicked on [link]');");
             ?>
         </div>
             </div>
@@ -521,7 +518,7 @@ EOF;
                     <?php
 
                     //todo analysis not really possible biopsy unknown
-//                    if ($wsi_analysis_endpoint && (FM_PATH == "" || FM_PATH == "/")) {
+//                    if (FM_WSI_ANALYSIS_PAGE && (FM_PATH == "" || FM_PATH == "/")) {
 //                        echo <<<EOF
 //                        <input type="submit" form="analysis-form" style="cursor: pointer" id="send-one-file-analysis" onclick="
 //let form = document.getElementById('analysis-form'); form.children[0].setAttribute('name', 'biopsy'); form.children[0].setAttribute('value', '$f');
@@ -620,7 +617,7 @@ EOF;
 //<br><a onclick=\"viewerConfig.setShaderFor('$full_wsi_path');\" class='pointer'>Add as layer.</a>";
 //
 
-                $title_tags = "onclick=\"go('$user_id', false, '$fname', '$full_wsi_path');\" class=\"pointer\"";
+                $title_tags = "onclick=\"go('".FM_USER_ID."', false, '$fname', '$full_wsi_path');\" class=\"pointer\"";
                 $title_prefix = "$title_prefix<i class='xopat'>&#xe802;</i>";
 
 
@@ -628,7 +625,7 @@ EOF;
 
 //               TODO! if ($session) {
 //                    try {
-//                        $ses_data = $session->readOne("$rel_dirpath/$fname", $user)->fetchArray(SQLITE3_ASSOC);
+//                        $ses_data = $session->readOne("$rel_dirpath/$fname", FM_USER_ID)->fetchArray(SQLITE3_ASSOC);
 //                        if ($ses_data) {
 //                            $exports = rawurlencode($ses_data["session"]);
 //                            $actions .= "<br><a class='pointer' onclick='openHtmlExport(`$exports`)'> Open last session. </a>";
@@ -678,10 +675,10 @@ EOF;
                 <?php endif; ?>
                 <td class="inline-actions">
                     <?php if ($is_tiff) {  ?>
-                        <a title="Open in Viewer" onclick="go('<?php echo $user; ?>', false, '<?php echo $fname; ?>', '<?php echo $full_wsi_path; ?>');" class="pointer"><i class='xopat'>&#xe802;</i></a>
+                        <a title="Open in Viewer" onclick="go('<?php echo FM_USER_ID; ?>', false, '<?php echo $fname; ?>', '<?php echo $full_wsi_path; ?>');" class="pointer"><i class='xopat'>&#xe802;</i></a>
                       <?php
 
-                    } else if ($wsi_analysis_endpoint && strtolower($ext) === "mrxs") {
+                    } else if (FM_WSI_ANALYSIS_PAGE && strtolower($ext) === "mrxs") {
                         echo <<<EOF
                         <input type="submit" form="analysis-form" style="cursor: pointer" id="send-one-file-analysis" onclick="
 let form = document.getElementById('analysis-form'); form.children[0].setAttribute('name', 'file'); form.children[0].setAttribute('value', '$fname');
@@ -745,11 +742,11 @@ EOF;
 
         window.viewerConfig = new ViewerConfig({
             windowName: 'viewerConfig',
-            viewerUrl: '<?php echo $viewer_url; ?>',
+            viewerUrl: '<?php echo FM_XOPAT_URL; ?>',
             containerId: "viewer-configurator",
             tiffPreviewMaker: dziImagePreviewMaker,
-            data: `<?php echo $_DATA['viewer-config'] ?? ''; ?>`,
-        }, '<?php echo XOPAT_SOURCES; ?>').withUser(<?php echo $is_logged ? "'{$user["id"]}'" : "undefined"; ?>);
+            data: `<?php echo $_POST['viewer-config'] ?? ''; ?>`,
+        }, '<?php echo FM_XOPAT_SOURCES; ?>').withUser(<?php echo FM_USER_ID; ?>);
 
         document.getElementById('file-browser-form').addEventListener('submit', () => {
             document.getElementById('viewer-config').value = viewerConfig.export();
@@ -813,26 +810,6 @@ function fm_show_nav_path($path)
 <!--                <li class="nav-item"><a class="nav-link mx-1" title="New folder" href style="outline: none;" data-toggle="modal" data-target="#createNewItem"><i class="fa fa-plus-square fa-fw"></i> New Item</a></li>-->
 <!--                <li class="nav-item"><a href="?toggleTree=true" class="nav-link mx-1" title="Toggle Directories List"><i class="fa fa-eye-slash fa-fw"></i> Toggle Tree View</a></li>-->
 <!--            --><?php //endif; ?>
-
-            <?php
-
-//            global $wsi_status_full_endpoint;
-//            if ($wsi_status_full_endpoint) {
-//                try {
-//                    $data = json_decode(file_get_contents($wsi_status_full_endpoint), true);
-//                    if ($data["status"] === "running") {
-//                        echo '<span class="State State--closed mx-1">Analysis Running</span>';
-//                    } else if ($data["status"] === "ready") {
-//                        echo '<span class="State State--open mx-1">Analysis Idle</span>';
-//                    }
-//                } catch (Exception $e) {
-//                    //pass
-//                }
-//            }
-
-            ?>
-
-
             <?php if (FM_USE_AUTH): ?><li class="nav-item"><a class="nav-link ml-1" title="Logout" href="?logout=1"><i class="fa fa-sign-out fa-fw" aria-hidden="true"></i> Log Out</a></li><?php endif; ?>
         </div>
         </div>
@@ -853,7 +830,6 @@ header("Expires: Sat, 26 Jul 1997 05:00:00 GMT");
 header("Cache-Control: no-store, no-cache, must-revalidate, post-check=0, pre-check=0");
 header("Pragma: no-cache");
 
-global $lang, $assets_path;
 ?>
     <!DOCTYPE html>
 <html data-color-mode="auto" data-light-theme="light" data-dark-theme="dark_dimmed">
@@ -862,14 +838,14 @@ global $lang, $assets_path;
     <title>File Manager</title>
     <meta name="Description" CONTENT="Web Storage">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <link rel="stylesheet" href="<?php echo $assets_path ?>/primer_css.css">
+    <link rel="stylesheet" href="<?php echo _FM_ASSETS_PATH ?>primer_css.css">
     <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <link rel="stylesheet" href="<?php echo $assets_path ?>/index.css">
-    <link rel="apple-touch-icon" sizes="180x180" href="<?php echo $assets_path ?>/apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="<?php echo $assets_path ?>/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="<?php echo $assets_path ?>/favicon-16x16.png">
-    <link rel="mask-icon" href="<?php echo $assets_path ?>/safari-pinned-tab.svg" color="#5bbad5">
+    <link rel="stylesheet" href="<?php echo _FM_ASSETS_PATH ?>index.css">
+    <link rel="apple-touch-icon" sizes="180x180" href="<?php echo _FM_ASSETS_PATH ?>apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="<?php echo _FM_ASSETS_PATH ?>favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="<?php echo _FM_ASSETS_PATH ?>favicon-16x16.png">
+    <link rel="mask-icon" href="<?php echo _FM_ASSETS_PATH ?>safari-pinned-tab.svg" color="#5bbad5">
     <meta name="msapplication-TileColor" content="#da532c">
     <meta name="theme-color" content="#ffffff">
 
@@ -906,7 +882,6 @@ header("Expires: Sat, 26 Jul 1997 05:00:00 GMT");
 header("Cache-Control: no-store, no-cache, must-revalidate, post-check=0, pre-check=0");
 header("Pragma: no-cache");
 
-global $lang, $assets_path, $js_path;
 ?>
     <!DOCTYPE html>
 <html data-color-mode="auto" data-light-theme="light" data-dark-theme="dark_dimmed">
@@ -916,25 +891,25 @@ global $lang, $assets_path, $js_path;
     <meta name="Description" CONTENT="Web Storage">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
-    <link rel="stylesheet" href="<?php echo $assets_path ?>/primer_css.css">
-    <link rel="stylesheet" href="<?php echo $assets_path ?>/xopat.css">
+    <link rel="stylesheet" href="<?php echo _FM_ASSETS_PATH ?>primer_css.css">
+    <link rel="stylesheet" href="<?php echo _FM_ASSETS_PATH ?>xopat.css">
     <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-    <link rel="stylesheet" href="<?php echo $assets_path ?>/index.css">
+    <link rel="stylesheet" href="<?php echo _FM_ASSETS_PATH ?>index.css">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 
-    <link rel="apple-touch-icon" sizes="180x180" href="<?php echo $assets_path ?>/apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="<?php echo $assets_path ?>/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="<?php echo $assets_path ?>/favicon-16x16.png">
-    <link rel="mask-icon" href="<?php echo $assets_path ?>/safari-pinned-tab.svg" color="#5bbad5">
+    <link rel="apple-touch-icon" sizes="180x180" href="<?php echo _FM_ASSETS_PATH ?>apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="<?php echo _FM_ASSETS_PATH ?>favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="<?php echo _FM_ASSETS_PATH ?>favicon-16x16.png">
+    <link rel="mask-icon" href="<?php echo _FM_ASSETS_PATH ?>safari-pinned-tab.svg" color="#5bbad5">
 
     <?php if (isset($_GET['view']) && FM_USE_HIGHLIGHTJS): ?>
-        <link rel="stylesheet" href="<?php echo $js_path ?>/highlight.min.js">
+        <link rel="stylesheet" href="<?php echo _FM_JS_PATH ?>highlight.min.js">
     <?php endif; ?>
 
-    <script type="text/javascript" src="<?php echo $js_path ?>/viewerRun.js"></script>
-    <script type="text/javascript" src="<?php echo $js_path ?>/taggle.js"></script>
-    <script type="text/javascript" src="<?php echo $js_path ?>/viewerConfig.js"></script>
-    <link rel="stylesheet" href="<?php echo $assets_path ?>/viewer_config.css">
+    <script type="text/javascript" src="<?php echo _FM_JS_PATH ?>viewerRun.js"></script>
+    <script type="text/javascript" src="<?php echo _FM_JS_PATH ?>taggle.js"></script>
+    <script type="text/javascript" src="<?php echo _FM_JS_PATH ?>viewerConfig.js"></script>
+    <link rel="stylesheet" href="<?php echo _FM_ASSETS_PATH ?>viewer_config.css">
     <script type="text/javascript">window.csrf = '<?php echo $_SESSION['token']; ?>';</script>
 
 </head>
@@ -1016,9 +991,7 @@ global $lang, $assets_path, $js_path;
      */
     function fm_show_footer()
     {
-
-        global $js_path;
-    ?>
+        ?>
 </div>
 <script>
 

@@ -27,8 +27,8 @@ set_exception_handler(function (Throwable $exception) {
 });
 
 //todo send AUTH data from viewer and perform auth if required
-global $use_auth, $user, $user_id, $is_logged;
-$data = isset($_DATA["ajax"]) ? $_DATA : $_GET;
+global $user, $user_id;
+$data = isset($_POST["ajax"]) ? $_POST : $_GET;
 if (!isset($data["ajax"])) error("No Ajax Command!");
 
 switch ($data["ajax"]) {
@@ -123,7 +123,8 @@ switch ($data["ajax"]) {
         }
 
         $shader_data = json_encode($specs);
-        global $js_path, $assets_path, $viewer_url;
+        $viewer_url = FM_XOPAT_URL;
+        $js_path = _FM_JS_PATH;
         echo <<<EOF
     
    <head>
