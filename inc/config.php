@@ -23,10 +23,10 @@ if (defined('FM_DEBUG') && FM_DEBUG) {
     ini_set('display_errors', 'On');
 }
 
-defined('FM_IMAGE_SERVER_PREVIEW_URL_MAKER') || define('FM_IMAGE_SERVER_PREVIEW_URL_MAKER', "http://localhost:8080/txopat/index.php");
+defined('FM_IMAGE_SERVER_PREVIEW_URL_MAKER') || define('FM_IMAGE_SERVER_PREVIEW_URL_MAKER', "http://localhost:8080/xopat/index.php");
 
 //Url of the Viewer
-defined('FM_XOPAT_URL') || define('FM_XOPAT_URL', "http://localhost:8080/txopat/index.php");
+defined('FM_XOPAT_URL') || define('FM_XOPAT_URL', "http://localhost:8080/xopat/index.php");
 
 // Default language
 defined('FM_LANG') || define('FM_LANG', 'en');
@@ -78,7 +78,7 @@ defined('FM_EXTENSION') || define('FM_EXTENSION', '');
 defined('FM_WSI_ANALYSIS_PAGE') || define('FM_WSI_ANALYSIS_PAGE', "http://localhost:8081/importer/server/analysis.php");
 
 //Relative or absolute path to the viewer source src folder. Only required for shader configurator.
-defined('FM_XOPAT_SOURCES') || define('FM_XOPAT_SOURCES', 'http://localhost:8080/txopat/user_setup.php');
+defined('FM_XOPAT_SOURCES') || define('FM_XOPAT_SOURCES', 'http://localhost:8080/xopat/user_setup.php');
 
 // Path to the database repository root relative to this repository
 defined('FM_XO_DB_ROOT') || define('FM_XO_DB_ROOT', "../xo_db/");
