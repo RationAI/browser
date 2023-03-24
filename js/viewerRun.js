@@ -1,3 +1,4 @@
+//todo delete this file, uniforma access via viewerconfig.js
 var user_settings = {
     params: {
         "debug": true
@@ -10,11 +11,6 @@ var user_settings = {
     plugins: {}
 };
 
-
-function moveTo(id) {
-    var elmnt = document.getElementById(id);
-    elmnt.scrollIntoView();
-}
 
 function go(user, newTab, title, image, ...dataArray) {
     loadFormData(user, newTab, title, image, ...dataArray);
@@ -91,14 +87,7 @@ function loadFormData(user, newTab, title, image, ...dataArray) {
         }
         user_settings.visualizations.push(vis);
     }
-
-    if (user) {
-        user_settings.plugins["user-session"] = {
-            referenceFile: image,
-            permaLoad: true,
-        };
-        user_settings.meta["user"] = user;
-    }
+    user_settings.meta["session"] = image;
 
     document.getElementById("visualisation").value = JSON.stringify(user_settings);
     if (newTab) {

@@ -19,7 +19,7 @@ if (!defined('FM_CONFIG') && is_file(PATH_TO_IS_MANAGER . 'config.php')) {
 // Parse input data
 if (!count($_POST)) {
     try {
-        $_POST = (array)json_decode(file_get_contents("php://input")) ?? [];
+        $_POST = (array)json_decode(file_get_contents("php://input"), true) ?? [];
     } catch (Exception $e) {
         //pass not a valid input
         $_POST = [];

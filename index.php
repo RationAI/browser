@@ -1,6 +1,6 @@
 <?php
 
-//relative difference of index.php wrt. file manager
+//Move this file anywhere you like, just specify relative path to the root.
 if (!defined('PATH_TO_IS_MANAGER')) {
     define('PATH_TO_IS_MANAGER', '');
 }

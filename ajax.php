@@ -1,5 +1,5 @@
 <?php
-
+//todo instead of ajax make it included
 //relative difference of index.php wrt. file manager
 if (!defined('PATH_TO_IS_MANAGER')) {
     define('PATH_TO_IS_MANAGER', '');
@@ -164,62 +164,6 @@ switch ($data["ajax"]) {
 EOF;
 
         break;
-
-    case "storeSession":
-        try {
-            $content = $data["session"];
-            $file = $data["filename"];
-            $user = $data["user"];
-
-            if (strlen($content) > 10e6) error("Data too big.");
-
-            throw new Exception("not implemented");
-//           todo  if ($session->storeOne($file, $user, $content)) {
-//                send();
-//            }
-
-            send();
-        } catch (Exception $e) {
-            error($e->getMessage());
-        }
-        break;
-    case "setSeen":
-        try {
-            $file = $data["filename"];
-            if ($user_id < 0) return;
-            xo_file_seen_by(basename($file), $user_id);
-            send();
-        } catch (Exception $e) {
-            error($e->getMessage());
-        }
-//    case "search":
-//        $result = array();
-//        function searchFiles($path)
-//        {
-//            require_once PATH_TO_IS_MANAGER . "inc/files.php";
-//            $parent = fm_get_parent_path(FM_PATH);
-//            global $result;
-//
-//            $objects = is_readable($path) ? scandir($path) : array();
-//            if (is_array($objects)) {
-//                foreach ($objects as $file) {
-//                    if ($file == '.' || $file == '..') {
-//                        continue;
-//                    }
-////todo respect?
-////                    if (!FM_SHOW_HIDDEN && substr($file, 0, 1) === '.') {
-////                        continue;
-////                    }
-//                    $new_path = $path . '/' . $file;
-//                    if (is_file($new_path)) {
-//                        $result[] = $file;
-//                    }
-//                }
-//            }
-//        }
-//
-//        break;
-
     default:
         error("Unknown ajax request call: " . $data["ajax"]);
 }

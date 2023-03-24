@@ -174,35 +174,24 @@ class ViewerConfig {
         }
     }
 
-    withUser(user) {
+    withSession(referenceFilePath) {
+        if (typeof referenceFilePath !== "string" || !referenceFilePath.trim()) {
+            //not supported
+            this._setMeta("session", null);
+            return this;
+        }
+
+        this._setMeta("session", referenceFilePath);
+        return this;
+    }
+
+    _setMeta(key, value) {
         let meta = this.props.data.meta;
         if (!meta) {
             this.props.data.meta = meta = {};
         }
-
-        if (!user) {
-            delete meta["user"];
-        } else {
-            meta["user"] = user;
-        }
-        return this;
-    }
-
-    withSession(referenceFilePath) {
-        let plugins = this.props.data.plugins;
-        if (typeof referenceFilePath !== "string" || !referenceFilePath.trim()) {
-            //not supported
-            delete plugins["user-session"];
-            return this;
-        }
-
-        if (!plugins) {
-            this.props.data.plugins = plugins = {};
-        }
-        plugins["user-session"] = {
-            referenceFile: referenceFilePath,
-            permaLoad: true,
-        };
+        if (value === undefined || value === null) delete meta[key];
+        else meta[key] = value;
         return this;
     }
 
