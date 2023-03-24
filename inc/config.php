@@ -52,6 +52,8 @@ defined('FM_BROWSE_ROOT') || define('FM_BROWSE_ROOT', '/var/www/data/');
 //todo unused
 defined('FM_IMAGE_SERVER_URL_PATH') || define('FM_IMAGE_SERVER_URL_PATH', FM_BROWSE_ROOT);
 
+defined('FM_ADVANCED_MODE') || define('FM_ADVANCED_MODE', false);
+
 // Root url for links in file manager.Relative to FM_HTTP_HOST. Variants: '', 'path/to/subfolder'
 // Will not working if $root_path will be outside of server document root
 //if front end path and root path differ use a proxy link that will

@@ -523,24 +523,19 @@ EOF;
                     $micron_x = -1;
                     $micron_y = -1;
                 }
-
-
                 $img = $image_preview_url_maker($full_wsi_path);
                 $img = "<img class='mr-2 tiff-preview' src=\"$img\">";
-                $onimageclick = "onclick=\"viewerConfig.setTissue('$full_wsi_path');\"";
 
                 $actions="<span id='{$full_wsi_path}-meta' style='display: none' data-microns-x='$micron_x' data-microns-y='$micron_y'></span>
 <a href=\"ajax.php?ajax=runDefaultVisualization&filename={$fname}&directory={$dirpath}&relativeDirectory={$wsi_dirpath}&microns={$micron_x}\">Open As Default</a> $not_yet_seen";
-//todo enable only for certain users
-//                $actions.="<br><br><a $onimageclick class='pointer'>Add as background.</a>
-//<br><a onclick=\"viewerConfig.setShaderFor('$full_wsi_path');\" class='pointer'>Add as layer.</a>";
-//
+
+                if (FM_ADVANCED_MODE) {
+                    $actions.="<br><br><a onclick=\"viewerConfig.setTissue('$full_wsi_path');\" class='pointer'>Add as background.</a>
+<br><a onclick=\"viewerConfig.setShaderFor('$full_wsi_path');\" class='pointer'>Add as layer.</a>";
+                }
 
                 $title_tags = "onclick=\"go('".FM_USER_ID."', false, '$fname', '$full_wsi_path');\" class=\"pointer\"";
                 $title_prefix = "$title_prefix<i class='xopat'>&#xe802;</i>";
-
-
-
 
 //               TODO! if ($session) {
 //                    try {
