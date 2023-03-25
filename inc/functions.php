@@ -1,5 +1,11 @@
 <?php
 
+//same as in importer!
+function fm_tiff_fname_from_mirax($mirax) {
+    if (preg_match("/\.tiff?$/i", $mirax)) return $mirax;
+    return "$mirax.tiff";
+}
+
 /**
  * Delete  file or folder (recursively)
  * @param string $path

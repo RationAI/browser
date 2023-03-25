@@ -13,7 +13,7 @@ try {
     if (is_string($session) && $data) {
         if (!is_string($data)) $data = json_encode($data);
         if (strlen($data) > 10e6) error("Data too big.");
-        //xp_store_session(basename($session), FM_USER_ID, $data);
+        xp_store_session(fm_tiff_fname_from_mirax(basename($session)), FM_USER_ID, $data);
         send_ok();
     }
 } catch (Exception $e) {

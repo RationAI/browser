@@ -108,42 +108,6 @@ if (!is_dir($path)) {
 // get parent folder
 $parent = fm_get_parent_path(FM_PATH);
 
-require_once PATH_TO_IS_MANAGER . "tools/file_walker.php";
-$folders = $user_not_seen_files = $files = array();
-$clbck = function ($is_file, $item_name, $rel_path, $start_path, $wsi_path) {
-    global $files, $folders;
-    if ($is_file) $files[]= [$item_name, $start_path, $wsi_path, $rel_path];
-    else $folders[]= [$item_name, $start_path, $wsi_path, $rel_path];
-};
-if (empty(FM_SEARCH_QUERY)) {
-    $predicate = fn($a, $b) => true;
-    //normal list browsing, search with one depth stack limit (current folder)
-    file_scan($path, $rel_path, $wsi_path, $clbck, $predicate, 1);
-} else {
-    $predicate = function ($filename, $filepath) {
-        if (is_dir($filepath)) return false;
-        $pattern = FM_SEARCH_QUERY;
-        return preg_match("#$pattern#i", $filename);
-    };
-    //works only because we exclude folders, uses two child depth limit since performance drops significantly...
-    file_scan($path, $rel_path, $wsi_path, $clbck, $predicate, 3);
-    fm_set_msg('Only 2 folders in depth are scanned due to many files - the list might be incomplete.', 'alert');
-}
-unset($predicate);
-unset($clbck);
-
-if (!empty($files)) {
-    $key_extractor = function ($f) { return $f[0]; };
-    $keys = array_map($key_extractor, $files);
-    array_multisort($keys, SORT_NATURAL | SORT_FLAG_CASE, $files);
-
-    $user_not_seen_files = xo_file_list_not_seen_by_user($keys, FM_USER_ID);
-}
-if (!empty($folders)) {
-    $key_extractor = function ($f) { return $f[0]; };
-    $keys = array_map($key_extractor, $folders);
-    array_multisort($keys, SORT_NATURAL | SORT_FLAG_CASE, $folders);
-}
 
 // file viewer
 if (isset($_GET['view'])) {
@@ -157,7 +121,7 @@ if (isset($_GET['view'])) {
 
     fm_show_header(); // HEADER
 
-    $file_url = FM_ROOT_URL . fm_convert_win((FM_PATH != '' ? '/' . FM_PATH : '') . '/' . $file);
+    $file_url = FM_DIRECT_FILES_URL . fm_convert_win((FM_PATH == '' ? '' : FM_PATH . '/') . $file);
     $file_path = $path . '/' . $file;
     $wsi_file_path = $wsi_path . '/' . $file;
 
@@ -289,6 +253,43 @@ if (isset($_GET['view'])) {
     <?php
     fm_show_footer();
     exit;
+}
+
+require_once PATH_TO_IS_MANAGER . "tools/file_walker.php";
+$folders = $file_meta_data = $files = array();
+$clbck = function ($is_file, $item_name, $rel_path, $start_path, $wsi_path) {
+    global $files, $folders;
+    if ($is_file) $files[]= [$item_name, $start_path, $wsi_path, $rel_path];
+    else $folders[]= [$item_name, $start_path, $wsi_path, $rel_path];
+};
+if (empty(FM_SEARCH_QUERY)) {
+    $predicate = fn($a, $b) => true;
+    //normal list browsing, search with one depth stack limit (current folder)
+    file_scan($path, $rel_path, $wsi_path, $clbck, $predicate, 1);
+} else {
+    $predicate = function ($filename, $filepath) {
+        if (is_dir($filepath)) return false;
+        $pattern = FM_SEARCH_QUERY;
+        return preg_match("#$pattern#i", $filename);
+    };
+    //works only because we exclude folders, uses two child depth limit since performance drops significantly...
+    file_scan($path, $rel_path, $wsi_path, $clbck, $predicate, 3);
+    fm_set_msg('Only 2 folders in depth are scanned due to many files - the list might be incomplete.', 'alert');
+}
+unset($predicate);
+unset($clbck);
+
+if (!empty($files)) {
+    $key_extractor = function ($f) { return $f[0]; };
+    $keys = array_map($key_extractor, $files);
+    array_multisort($keys, SORT_NATURAL | SORT_FLAG_CASE, $files);
+
+    $file_meta_data = xo_get_files_and_their_meta_for_user($keys, FM_USER_ID);
+}
+if (!empty($folders)) {
+    $key_extractor = function ($f) { return $f[0]; };
+    $keys = array_map($key_extractor, $folders);
+    array_multisort($keys, SORT_NATURAL | SORT_FLAG_CASE, $folders);
 }
 
 //--- FILEMANAGER MAIN
@@ -453,26 +454,6 @@ EOF;
             flush();
         }
 
-//        try {
-            //TODO test
-//            require_once "TagStore.php";
-//            $tags = new TagStore();
-//
-//            $tags->tagFile("ahoj", "file1.php");
-//            $tags->tagFile("need", "file2.php");
-//            $tags->tagFile("ahoj", "file1.php");
-//            $tags->tagFile("ahoj", "file3.php");
-//            echo $tags->getFiles("file1.php") . "<br><br>";
-//            echo $tags->getTags("need") . "<br><br>";
-//            echo $tags->readFilesTags("file3.php") . "<br><br>";
-//            echo $tags->readTagsFiles("ahoj") . "<br><br>";
-//            $tags->unTagFile("ahoj", "file1.php");
-//            $tags->unTagFile("ahoj", "file2.php");
-//            echo $tags->readTagsFiles("ahoj") . "<br><br>";
-//        } catch (Exception $e) {
-//            echo $e;
-//        }
-
         require_once PATH_TO_IS_MANAGER . "inc/mirax.php";
         foreach ($files as $file_data) {
             $fname = $file_data[0];
@@ -504,11 +485,18 @@ EOF;
             $not_yet_seen="";
 
             if ($is_tiff) {
-
-                foreach ($user_not_seen_files as $not_seen) {
-                    if ($user_not_seen_files["name"] == $fname) {
-                        $row_class .= "not-yet-seen";
-                        $not_yet_seen = "(not yet viewed)";
+                foreach ($file_meta_data as $file_meta) {
+                    if ($file_meta["name"] == $fname) {
+                        if (!$file_meta["seen"]) {
+                            $row_class .= "not-yet-seen";
+                            $not_yet_seen = "(not yet viewed)";
+                            break;
+                        }
+                        if ($file_meta["session"]) {
+                            $exports = rawurlencode($file_meta["session"]);
+                            $actions .= "<br><a class='pointer' onclick='openHtmlExport(`$exports`, `".FM_XOPAT_URL."`)'> Open last session. </a><br>";
+                        }
+                        break;
                     }
                 }
 
@@ -526,8 +514,8 @@ EOF;
                 $img = $image_preview_url_maker($full_wsi_path);
                 $img = "<img class='mr-2 tiff-preview' src=\"$img\">";
 
-                $actions="<span id='{$full_wsi_path}-meta' style='display: none' data-microns-x='$micron_x' data-microns-y='$micron_y'></span>
-<a href=\"ajax.php?ajax=runDefaultVisualization&filename={$fname}&directory={$dirpath}&relativeDirectory={$wsi_dirpath}&microns={$micron_x}\">Open As Default</a> $not_yet_seen";
+                $actions.="<span id='{$full_wsi_path}-meta' style='display: none' data-microns-x='$micron_x' data-microns-y='$micron_y'></span>
+<a href=\"build_visualization.php?filename={$fname}&directory={$dirpath}&relativeDirectory={$wsi_dirpath}&microns={$micron_x}\">Open As Default</a> $not_yet_seen";
 
                 if (FM_ADVANCED_MODE) {
                     $actions.="<br><br><a onclick=\"viewerConfig.setTissue('$full_wsi_path');\" class='pointer'>Add as background.</a>
@@ -536,18 +524,6 @@ EOF;
 
                 $title_tags = "onclick=\"go('".FM_USER_ID."', false, '$fname', '$full_wsi_path');\" class=\"pointer\"";
                 $title_prefix = "$title_prefix<i class='xopat'>&#xe802;</i>";
-
-//               TODO! if ($session) {
-//                    try {
-//                        $ses_data = $session->readOne("$rel_dirpath/$fname", FM_USER_ID)->fetchArray(SQLITE3_ASSOC);
-//                        if ($ses_data) {
-//                            $exports = rawurlencode($ses_data["session"]);
-//                            $actions .= "<br><a class='pointer' onclick='openHtmlExport(`$exports`)'> Open last session. </a>";
-//                        }
-//                    } catch (Exception $e) {
-//                        //pass
-//                    }
-//                }
 
             } else {
                 $img = $is_link ? 'fa fa-file-text-o' : fm_get_file_icon_class($fname);
@@ -660,7 +636,7 @@ EOF;
             containerId: "viewer-configurator",
             tiffPreviewMaker: dziImagePreviewMaker,
             data: `<?php echo $_POST['viewer-config'] ?? ''; ?>`,
-        }, '<?php echo FM_XOPAT_SOURCES; ?>').withUser(<?php echo FM_USER_ID; ?>);
+        }, '<?php echo FM_XOPAT_SOURCES; ?>');
 
         document.getElementById('file-browser-form').addEventListener('submit', () => {
             document.getElementById('viewer-config').value = viewerConfig.export();

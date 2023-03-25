@@ -53,10 +53,36 @@ function goMask(user, newTab, title, image, maskJSONdata, ...dataArray) {
     resetFormData();
 }
 
-function openHtmlExport(exported) {
+function openHtmlExport(exported, url) {
     let child = window.open("about:blank","myChild");
-    child.document.write(decodeURIComponent(exported));
-    child.document.close();
+    try {
+        const {app, data} = JSON.parse(decodeURIComponent(exported));
+        let form = `
+      <form method="POST" id="redirect" action="${url}">
+        <input type="hidden" id="visualisation" name="visualisation">
+        <input type="submit" value="">
+      </form>
+      <script type="text/javascript">
+        document.getElementById("visualisation").value = \`${app.replaceAll("\\", "\\\\")}\`;
+        const form = document.getElementById("redirect");
+        let node;`;
+
+        for (let id in data) {
+            form += `node = document.createElement("input");
+node.setAttribute("type", "hidden");
+node.setAttribute("name", \`${id}\`);
+node.setAttribute("value", \`${data[id].replaceAll("\\", "\\\\")}\`);
+form.appendChild(node);`;
+        }
+
+        form += `
+form.submit();
+<\/script>`;
+        child.document.write(form);
+        child.document.close();
+    } catch (e) {
+        //todo error ...
+    }
 }
 
 function loadFormData(user, newTab, title, image, ...dataArray) {

@@ -4,7 +4,7 @@ error_reporting(E_ALL);
 //Default Image Server Preview URL Maker (for tif pyramid previews)
 //Default Image Server Preview URL Maker (for tif pyramid previews)
 $image_preview_url_maker = function ($file) {
-    return "http://localhost:8080/iipsrv.fcgi?Deepzoom={$file}_files/0/0_0.jpg";
+    return "http://localhost:8080/iipsrv/iipsrv.fcgi?Deepzoom={$file}_files/0/0_0.jpg";
 };
 
 //Array of folders excluded from listing
@@ -23,10 +23,10 @@ if (defined('FM_DEBUG') && FM_DEBUG) {
     ini_set('display_errors', 'On');
 }
 
-defined('FM_IMAGE_SERVER_PREVIEW_URL_MAKER') || define('FM_IMAGE_SERVER_PREVIEW_URL_MAKER', "http://localhost:8080/xopat/index.php");
+defined('FM_IMAGE_SERVER_PREVIEW_URL_MAKER') || define('FM_IMAGE_SERVER_PREVIEW_URL_MAKER', "http://localhost:8080/txopat/index.php");
 
 //Url of the Viewer
-defined('FM_XOPAT_URL') || define('FM_XOPAT_URL', "http://localhost:8080/xopat/index.php");
+defined('FM_XOPAT_URL') || define('FM_XOPAT_URL', "http://localhost:8080/txopat/index.php");
 
 // Default language
 defined('FM_LANG') || define('FM_LANG', 'en');
@@ -37,10 +37,10 @@ defined('FM_USE_AUTH') || define('FM_USE_AUTH', true);
 // Show or hide files and folders that starts with a dot
 defined('FM_SHOW_HIDDEN_FILES') || define('FM_SHOW_HIDDEN_FILES', false);
 
-//// Enable highlight.js (https://highlightjs.org/) on view's page
-//defined('FM_USE_HIGHLIGHTJS') || define('FM_USE_HIGHLIGHTJS', true);
-//// highlight.js style
-//defined('FM_HIGHLIGHTJS_STYLE') || define('FM_HIGHLIGHTJS_STYLE', 'vs');
+// Enable highlight.js (https://highlightjs.org/) on view's page
+defined('FM_USE_HIGHLIGHTJS') || define('FM_USE_HIGHLIGHTJS', true);
+// highlight.js style
+defined('FM_HIGHLIGHTJS_STYLE') || define('FM_HIGHLIGHTJS_STYLE', 'vs');
 
 // Default timezone for date() and time() - http://php.net/manual/en/timezones.php
 defined('FM_DEFAULT_TIMEZONE') || define('FM_DEFAULT_TIMEZONE', 'Europe/Prague'); // UTC
@@ -65,6 +65,9 @@ defined('FM_HTTP_PATH') || define('FM_HTTP_PATH', FM_BROWSE_ROOT);
 // Root url for the source files, by default relative, the domain is appended automatically (JS, assets)
 defined('FM_URL') || define('FM_URL', PATH_TO_IS_MANAGER || '');
 
+// URL path enabling direct access to files, the server can define access to the folder at given prefix
+defined('FM_DIRECT_FILES_URL') || define('FM_DIRECT_FILES_URL', '/data/');
+
 defined('FM_HTTP_HOST') || define('FM_HTTP_HOST', $_SERVER['HTTP_HOST']);
 
 // input encoding for iconv
@@ -83,7 +86,7 @@ defined('FM_WSI_ANALYSIS_PAGE') || define('FM_WSI_ANALYSIS_PAGE', "http://localh
 defined('FM_XOPAT_SOURCES') || define('FM_XOPAT_SOURCES', 'http://localhost:8080/xopat/user_setup.php');
 
 // Path to the database repository root relative to this repository
-defined('FM_XO_DB_ROOT') || define('FM_XO_DB_ROOT', "../xo_db/");
+defined('FM_XO_DB_ROOT') || define('FM_XO_DB_ROOT', "../txo_db/");
 
 // DEFINE ALL HARDCODED VALUES
 // where are php files to look for
