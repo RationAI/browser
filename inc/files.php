@@ -284,6 +284,7 @@ if (!empty($files)) {
     $keys = array_map($key_extractor, $files);
     array_multisort($keys, SORT_NATURAL | SORT_FLAG_CASE, $files);
 
+    //todo iterate metadata and group info
     $file_meta_data = xo_get_files_and_their_meta_for_user($keys, FM_USER_ID);
 }
 if (!empty($folders)) {
