@@ -63,6 +63,7 @@ define('FM_LOGGED', isset($_SESSION['logged']));
 define('FM_USER', FM_LOGGED ? $_SESSION['logged'] : []);
 define('FM_USER_ID', FM_LOGGED ? FM_USER["id"] : -1);
 
+
 $rel_root_path = rtrim(FM_LOGGED ? (FM_USER["root"] ?? "") : "", '\\/');
 $root_path = FM_BROWSE_ROOT . $rel_root_path;
 $root_path = str_replace('\\', '/', $root_path);

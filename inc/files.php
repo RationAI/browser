@@ -1,5 +1,4 @@
 <?php
-
 // always use ?p=
 if (!isset($_GET['p'])) {
     fm_redirect(FM_SELF_URL . '?p=');
@@ -113,7 +112,11 @@ $parent = fm_get_parent_path(FM_PATH);
 if (isset($_GET['view'])) {
     $file = $_GET['view'];
     $file = fm_clean_path($file);
+
+
     $file = str_replace('/', '', $file);
+
+
     if ($file == '' || !is_file($path . '/' . $file)) {
         fm_set_msg('File not found', 'error');
         fm_redirect(FM_SELF_URL . '?p=' . urlencode(FM_PATH));
@@ -121,7 +124,7 @@ if (isset($_GET['view'])) {
 
     fm_show_header(); // HEADER
 
-    $file_url = FM_DIRECT_FILES_URL . fm_convert_win((FM_PATH == '' ? '' : FM_PATH . '/') . $file);
+    $file_url = FM_DIRECT_FILES_URL . fm_convert_win(fm_clean_path(FM_USER["root"]) . '/' . $rel_path . '/' .$file);
     $file_path = $path . '/' . $file;
     $wsi_file_path = $wsi_path . '/' . $file;
 
@@ -280,19 +283,40 @@ unset($predicate);
 unset($clbck);
 
 if (!empty($files)) {
+    //we call this only with files
+    require_once PATH_TO_IS_MANAGER . "inc/mirax.php";
+
     $key_extractor = function ($f) { return $f[0]; };
     $keys = array_map($key_extractor, $files);
     array_multisort($keys, SORT_NATURAL | SORT_FLAG_CASE, $files);
 
     //todo iterate metadata and group info
-    $file_meta_data = xo_get_files_and_their_meta_for_user($keys, FM_USER_ID);
+    $keys = xo_get_files_and_their_meta_for_user($keys, FM_USER_ID);
+    foreach ($keys as $file) {
+        if (!isset($file_meta_data[$file["name"]])) {
+            $file_meta_data[$file["name"]] = [
+                "id"=> $file["id"], "name"=> $file["name"], "created"=> $file["created"],
+                "status"=> $file["status"],  "root"=> $file["root"],  "biopsy"=> $file["biopsy"],
+                "seen"=> $file["seen"], "session"=> $file["session"], "events"=> [$file["event"]],
+                "event_data"=> [$file["event_data"]]
+            ];
+        } else {
+            $data = &$file_meta_data[$file["name"]];
+            $data["seen"] = $data["seen"] || $file["seen"];
+            if (is_string($data["session"]) || !strlen($data["session"])) {
+                $data["session"] = $file["session"];
+            }
+            $data["events"][]=$file["event"];
+            $data["event_data"][]=$file["event_data"];
+        }
+    }
 }
 if (!empty($folders)) {
     $key_extractor = function ($f) { return $f[0]; };
     $keys = array_map($key_extractor, $folders);
     array_multisort($keys, SORT_NATURAL | SORT_FLAG_CASE, $folders);
 }
-
+unset($keys);
 //--- FILEMANAGER MAIN
 fm_show_header(); // HEADER
 
@@ -455,7 +479,6 @@ EOF;
             flush();
         }
 
-        require_once PATH_TO_IS_MANAGER . "inc/mirax.php";
         foreach ($files as $file_data) {
             $fname = $file_data[0];
 
@@ -473,36 +496,20 @@ EOF;
             $is_link = is_link($full_path);
             $ext = pathinfo($fname, PATHINFO_EXTENSION);
             $is_tiff = strtolower($ext) === "tiff" || strtolower($ext) === "tif";
-            $actions = "";
+            $actions = ""; $container_attrs = "";
             $modif = date("d.m.y H:i", filemtime($full_path));
             $filesize_raw = filesize($full_path);
             $filesize = fm_get_filesize($filesize_raw);
-            $filelink = '?p=' . urlencode($wsi_dirpath) . '&amp;view=' . urlencode($fname);
+            $filelink = '?p=' . urlencode($rel_dirpath) . '&amp;view=' . urlencode($fname);
             $all_files_size += $filesize_raw;
             $perms = substr(decoct(fileperms($full_path)), -4);
             $img = $title_tags = $onimageclick = "";
 
+
             $row_class="";
-            $not_yet_seen="";
-
             if ($is_tiff) {
-                foreach ($file_meta_data as $file_meta) {
-                    if ($file_meta["name"] == $fname) {
-                        if (!$file_meta["seen"]) {
-                            $row_class .= "not-yet-seen";
-                            $not_yet_seen = "(not yet viewed)";
-                            break;
-                        }
-                        if ($file_meta["session"]) {
-                            $exports = rawurlencode($file_meta["session"]);
-                            $actions .= "<br><a class='pointer' onclick='openHtmlExport(`$exports`, `".FM_XOPAT_URL."`)'> Open last session. </a><br>";
-                        }
-                        break;
-                    }
-                }
-
-                //strip tiff to get the mirax file path
-                $tiff_meta = []; // todo safely fail! not as of now -> mirax_read_meta($full_path);
+//                strip tiff to get the mirax file path
+                $tiff_meta = mirax_read_meta($full_path);
                 if (count($tiff_meta) > 0) {
                     $level_0 = $tiff_meta["LAYER_0_LEVEL_0_SECTION"];
                     $micron_x = $level_0["MICROMETER_PER_PIXEL_X"];
@@ -514,9 +521,27 @@ EOF;
                 }
                 $img = $image_preview_url_maker($full_wsi_path);
                 $img = "<img class='mr-2 tiff-preview' src=\"$img\">";
+                $actions.="<span id='{$full_wsi_path}-meta' style='display: none' data-microns-x='$micron_x' data-microns-y='$micron_y'></span>";
 
-                $actions.="<span id='{$full_wsi_path}-meta' style='display: none' data-microns-x='$micron_x' data-microns-y='$micron_y'></span>
-<a href=\"build_visualization.php?filename={$fname}&directory={$dirpath}&relativeDirectory={$wsi_dirpath}&microns={$micron_x}\">Open As Default</a> $not_yet_seen";
+
+                if (isset($file_meta_data[$fname])) {
+                    $file_meta = $file_meta_data[$fname];
+                    if (!$file_meta["seen"]) {
+                        $row_class .= "not-yet-seen";
+                        $container_attrs = 'title="Not yet viewed" ';
+                    }
+                    if ($file_meta["session"]) {
+                        $exports = rawurlencode($file_meta["session"]);
+                        $actions .= "<a class='Label Label--primary btn2 label-btn' onclick='openHtmlExport(`$exports`, `".FM_XOPAT_URL."`)'> Open saved session. </a><br>";
+                    }
+                    foreach ($file_meta["events"] as $i=>$event) {
+                        //todo support dynamic selection type based on fetched algo meta
+                        if (strpos($event, "histopipe_") === 0 && $file_meta["event_data"][$i] === "processing-finished") {
+                            $actions.="<a class='Label Label--primary btn3 label-btn' href=\"build_visualization.php?filename={$fname}&directory={$dirpath}&relativeDirectory={$wsi_dirpath}&microns={$micron_x}\">Cancer Analysis</a>";
+                        }
+                    }
+                }
+
 
                 if (FM_ADVANCED_MODE) {
                     $actions.="<br><br><a onclick=\"viewerConfig.setTissue('$full_wsi_path');\" class='pointer'>Add as background.</a>
@@ -542,7 +567,7 @@ EOF;
             if (!isset($group["name"])) $group = array('name' => '-');
 
             ?>
-            <tr class="viewer-config-draggable <?php echo $row_class;?>" data-source="<?php echo $full_wsi_path; ?>">
+            <tr class="viewer-config-draggable <?php echo $row_class;?>" <?php echo $container_attrs ?> data-source="<?php echo $full_wsi_path; ?>">
 <!--                --><?php //if (!FM_READONLY): ?><!--<td><label><input type="checkbox" name="file[]" value="--><?php //echo fm_enc($fname) ?><!--"></label></td>--><?php //endif; ?>
                 <td style="display:flex; flex-direction: row">
                     <div class="icon-conatiner" <?php echo $onimageclick; ?>">

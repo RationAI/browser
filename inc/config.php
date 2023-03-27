@@ -1,5 +1,4 @@
 <?php
-error_reporting(E_ALL);
 
 //Default Image Server Preview URL Maker (for tif pyramid previews)
 //Default Image Server Preview URL Maker (for tif pyramid previews)
@@ -11,7 +10,6 @@ $image_preview_url_maker = function ($file) {
 $GLOBALS['exclude_folders'] = array(
     '.git'
 );
-
 
 // OVERRIDE ALL PROPS WITH USER SETTINGS
 if (defined('FM_CONFIG') && is_file(FM_CONFIG) ) {
