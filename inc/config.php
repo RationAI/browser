@@ -3,7 +3,7 @@
 //Default Image Server Preview URL Maker (for tif pyramid previews)
 //Default Image Server Preview URL Maker (for tif pyramid previews)
 $image_preview_url_maker = function ($file) {
-    return "http://localhost:8080/iipsrv/iipsrv.fcgi?Deepzoom={$file}_files/0/0_0.jpg";
+    return "/iipsrv/iipsrv.fcgi?Deepzoom={$file}_files/0/0_0.jpg";
 };
 
 //Array of folders excluded from listing
@@ -21,10 +21,8 @@ if (defined('FM_DEBUG') && FM_DEBUG) {
     ini_set('display_errors', 'On');
 }
 
-defined('FM_IMAGE_SERVER_PREVIEW_URL_MAKER') || define('FM_IMAGE_SERVER_PREVIEW_URL_MAKER', "http://localhost:8080/xopat/index.php");
-
 //Url of the Viewer
-defined('FM_XOPAT_URL') || define('FM_XOPAT_URL', "http://localhost:8080/xopat/index.php");
+defined('FM_XOPAT_URL') || define('FM_XOPAT_URL', "/xopat/index.php");
 
 // Default language
 defined('FM_LANG') || define('FM_LANG', 'en');
@@ -61,7 +59,7 @@ defined('FM_ADVANCED_MODE') || define('FM_ADVANCED_MODE', false);
 defined('FM_HTTP_PATH') || define('FM_HTTP_PATH', FM_BROWSE_ROOT);
 
 // Root url for the source files, by default relative, the domain is appended automatically (JS, assets)
-defined('FM_URL') || define('FM_URL', PATH_TO_IS_MANAGER || '');
+defined('FM_URL') || define('FM_URL', PATH_TO_IS_MANAGER ?? '');
 
 // URL path enabling direct access to files, the server can define access to the folder at given prefix
 defined('FM_DIRECT_FILES_URL') || define('FM_DIRECT_FILES_URL', '/data/');
@@ -81,7 +79,7 @@ defined('FM_EXTENSION') || define('FM_EXTENSION', '');
 defined('FM_WSI_ANALYSIS_PAGE') || define('FM_WSI_ANALYSIS_PAGE', "http://localhost:8081/importer/server/analysis.php");
 
 //Relative or absolute path to the viewer source src folder. Only required for shader configurator.
-defined('FM_XOPAT_SOURCES') || define('FM_XOPAT_SOURCES', 'http://localhost:8080/xopat/user_setup.php');
+defined('FM_XOPAT_SOURCES') || define('FM_XOPAT_SOURCES', '/xopat/user_setup.php');
 
 // Path to the database repository root relative to this repository
 defined('FM_XO_DB_ROOT') || define('FM_XO_DB_ROOT', "../xo_db/");

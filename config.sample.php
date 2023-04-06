@@ -32,8 +32,6 @@ $GLOBALS['exclude_folders'] = array(
  * leave out anything you don't want to override
  *
 
-define('FM_IMAGE_SERVER_PREVIEW_URL_MAKER', "http://localhost:8080/xopat/index.php");
-
 //Url of the Viewer
 define('FM_XOPAT_URL', "http://localhost:8080/xopat/index.php");
 
