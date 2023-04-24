@@ -27,7 +27,7 @@ function file_scan(string   $path,
                    callable $callback,
                    callable $filename_predicate,
                    int      $max_recursion=-1,
-    //args used in recurring calls
+                   //args used in recurring calls
                    int      $recursion_count=0,
                    string   $fname_append='',
                    array    $pulls=array()) {
@@ -87,43 +87,4 @@ function file_scan(string   $path,
             }
         }
     }
-}
-
-/**
- * Runs through existing files and creates necessary DB records / fixes errors
- *
- * @param $root string root of scan
- * @param $fname_pattern string extract / derive biopsy and root path from filename
- * @param $err callable on error
- * @return void
- */
-function db_file_scan_inspector(string $root, string $fname_pattern, callable $err, callable $iterator, callable $predicate=null) {
-    $clbck = function ($is_file, $item_name, $rel_path, $start_path, $wsi_path) use ($iterator, $err, $fname_pattern) {
-        try {
-            if (preg_match($fname_pattern, $item_name, $matches)) {
-                $iterator($is_file, $item_name, $rel_path, $start_path, $wsi_path, $matches);
-            } else {
-                $err("File not matched by the pattern!", [$is_file, $item_name, $rel_path, $start_path, $wsi_path]);
-            }
-        } catch (Exception $e) {
-            $err("File $item_name processing exception!", $e);
-        }
-    };
-    if ($predicate === null) $predicate = fn($a, $b) => true;
-    file_scan($root, "", "", $clbck, $predicate, 9999);
-}
-
-function mrxs_inspector(string $root) {
-    db_file_scan_inspector($root,
-        "/^(.*([0-9]{4})[_-]([0-9]+).*)\.tiff?$/i",
-        function ($is_file, $item_name, $rel_path, $start_path, $wsi_path, $matches) {
-            $file = xo_insert_or_get_file($item_name, -1, "uploaded", $matches[1], $matches[2]);
-
-            //process pyramidal tiff if not exists verify checksum etc
-
-
-            xo_update_file_by_id($file["id"], "processed");
-        },
-        fn($e, $d) => print_r(["e"=>$e, "d"=>$d])
-    );
 }

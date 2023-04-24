@@ -3,7 +3,7 @@
 //Default Image Server Preview URL Maker (for tif pyramid previews)
 //Default Image Server Preview URL Maker (for tif pyramid previews)
 $image_preview_url_maker = function ($file) {
-    return "/iipsrv/iipsrv.fcgi?Deepzoom={$file}_files/0/0_0.jpg";
+    return "/iipsrv/iipsrv.fcgi?Deepzoom={$file}_files/1/0_0.jpg";
 };
 
 //Array of folders excluded from listing

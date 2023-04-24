@@ -407,6 +407,9 @@ EOF;
             <?php
         }
 
+        //todo does not work if constant uses absolute path or '.././.' syntax
+        $browser_relative_root = PATH_TO_IS_MANAGER;
+
         foreach ($folders as $folder_data) {
             $f = $folder_data[0];
 
@@ -537,7 +540,7 @@ EOF;
                     foreach ($file_meta["events"] as $i=>$event) {
                         //todo support dynamic selection type based on fetched algo meta
                         if (strpos($event, "histopipe_") === 0 && $file_meta["event_data"][$i] === "processing-finished") {
-                            $actions.="<a class='Label Label--primary btn3 label-btn' href=\"build_visualization.php?filename={$fname}&directory={$dirpath}&relativeDirectory={$wsi_dirpath}&microns={$micron_x}\">Cancer Analysis</a>";
+                            $actions.="<a class='Label Label--primary btn3 label-btn' href=\"${$browser_relative_root}/build_visualization.php?filename={$fname}&directory={$dirpath}&relativeDirectory={$wsi_dirpath}&microns={$micron_x}\">Cancer Analysis</a>";
                         }
                     }
                 }
