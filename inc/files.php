@@ -106,7 +106,7 @@ if (!is_dir($path)) {
 
 // get parent folder
 $parent = fm_get_parent_path(FM_PATH);
-
+$show_file_details = FM_ADVANCED_MODE && !FM_IS_WIN;
 
 // file viewer
 if (isset($_GET['view'])) {
@@ -122,7 +122,6 @@ if (isset($_GET['view'])) {
         fm_redirect(FM_SELF_URL . '?p=' . urlencode(FM_PATH));
     }
 
-    fm_show_header(); // HEADER
 
     $file_url = FM_DIRECT_FILES_URL . fm_convert_win(fm_clean_path(FM_USER["root"]) . '/' . $rel_path . '/' .$file);
     $file_path = $path . '/' . $file;
@@ -131,6 +130,15 @@ if (isset($_GET['view'])) {
     $ext = strtolower(pathinfo($file_path, PATHINFO_EXTENSION));
     $mime_type = fm_get_mime_type($file_path);
     $filesize = filesize($file_path);
+
+    if ($ext == 'html') {
+        //show it as-is
+        echo file_get_contents($file_path);
+        exit;
+    }
+
+    fm_show_header(); // HEADER
+
 
     $is_zip = false;
     $is_image = false;
@@ -343,7 +351,7 @@ EOF;
 
     ?>
 
-<form id="file-browser-form" class="mt-3 mx-3 flex-grow-0" action="" method="post">
+<form id="file-browser-form" class="mt-3 mx-3 flex-grow-0" action="" method="post" style="<?php echo FM_ADVANCED_MODE ? 'width: calc(100vw - 250px);' : 'width: 100vw;' ?>">
     <input type="hidden" name="viewer-config" value="">
     <input type="hidden" name="p" value="<?php echo fm_enc(FM_PATH) ?>">
     <input type="hidden" name="token" value="<?php echo $_SESSION['token']; ?>">
@@ -389,9 +397,10 @@ EOF;
 <!--                </th>-->
 <!--            --><?php //endif; ?>
             <th>Name</th>
+            <th style="">Status</th>
             <th style="width:10%">Size</th>
             <th style="width:12%">Modified</th>
-            <?php if (!FM_IS_WIN): ?>
+            <?php if ($show_file_details): ?>
                 <th style="width:6%">Perms</th>
                 <th style="width:10%">Owner</th><?php endif; ?>
             <th style="width:<?php if (!FM_READONLY): ?>13<?php else: ?>6.5<?php endif; ?>%">Actions</th>
@@ -425,13 +434,17 @@ EOF;
             $img = $is_link ? 'icon-link_folder' : 'fa fa-folder-o';
             $modif = date(FM_DATETIME_FORMAT, filemtime($full_path));
 
-            $perms = substr(decoct(fileperms($full_path)), -4);
-            if (function_exists('posix_getpwuid') && function_exists('posix_getgrgid')) {
-                $owner = posix_getpwuid(fileowner($full_path));
-                $group = posix_getgrgid(filegroup($full_path));
-            } else {
-                $owner = array('name' => '?');
-                $group = array('name' => '?');
+            $status = "";
+
+            if ($show_file_details) {
+                $perms = substr(decoct(fileperms($full_path)), -4);
+                if (function_exists('posix_getpwuid') && function_exists('posix_getgrgid')) {
+                    $owner = posix_getpwuid(fileowner($full_path));
+                    $group = posix_getgrgid(filegroup($full_path));
+                } else {
+                    $owner = array('name' => '?');
+                    $group = array('name' => '?');
+                }
             }
             //todo not all things have to work since file name can be required longer...
             ?>
@@ -448,9 +461,10 @@ EOF;
                                 class="<?php echo $img ?>"></i> <?php echo $position_relative_path_display . fm_convert_win($f) ?>
                         </a><?php echo($is_link ? ' &rarr; <i>' . readlink($full_path) . '</i>' : '') ?></div>
                 </td>
+                <td><?php echo $status ?></td>
                 <td>Folder</td>
                 <td><?php echo $modif ?></td>
-                <?php if (!FM_IS_WIN): ?>
+                <?php if ($show_file_details): ?>
                     <td> <?php echo $perms ?>
                     </td>
                     <td><?php echo $owner['name'] . ':' . $group['name'] ?></td>
@@ -505,15 +519,16 @@ EOF;
             $filesize = fm_get_filesize($filesize_raw);
             $filelink = '?p=' . urlencode($rel_dirpath) . '&amp;view=' . urlencode($fname);
             $all_files_size += $filesize_raw;
-            $perms = substr(decoct(fileperms($full_path)), -4);
             $img = $title_tags = $onimageclick = "";
+
+            $status = "";
 
 
             $row_class="";
             if ($is_tiff) {
 //                strip tiff to get the mirax file path
                 $tiff_meta = mirax_read_meta($full_path);
-                if (count($tiff_meta) > 0) {
+                if ($tiff_meta && count($tiff_meta) > 0) {
                     $level_0 = $tiff_meta["LAYER_0_LEVEL_0_SECTION"];
                     $micron_x = $level_0["MICROMETER_PER_PIXEL_X"];
                     $micron_y = $level_0["MICROMETER_PER_PIXEL_Y"];
@@ -523,7 +538,7 @@ EOF;
                     $micron_y = -1;
                 }
                 $img = $image_preview_url_maker($full_wsi_path);
-                $img = "<img class='mr-2 tiff-preview' src=\"$img\">";
+                $img = "<span class='tiff-container'><img class='mr-2 tiff-preview' src=\"$img\"></span>";
                 $actions.="<span id='{$full_wsi_path}-meta' style='display: none' data-microns-x='$micron_x' data-microns-y='$micron_y'></span>";
 
 
@@ -532,23 +547,39 @@ EOF;
                     if (!$file_meta["seen"]) {
                         $row_class .= "not-yet-seen";
                         $container_attrs = 'title="Not yet viewed" ';
+                        $status = "New file.";
                     }
                     if ($file_meta["session"]) {
                         $exports = rawurlencode($file_meta["session"]);
-                        $actions .= "<a class='Label Label--primary btn2 label-btn' onclick='openHtmlExport(`$exports`, `".FM_XOPAT_URL."`)'> Open saved session. </a><br>";
+                        $actions .= "<a class='Label Label--primary label-btn' onclick='openHtmlExport(`$exports`, `".FM_XOPAT_URL."`)'> Open saved session. </a>";
                     }
+
+                    $generated = false;
                     foreach ($file_meta["events"] as $i=>$event) {
                         //todo support dynamic selection type based on fetched algo meta
                         if (strpos($event, "histopipe_") === 0 && $file_meta["event_data"][$i] === "processing-finished") {
-                            $actions.="<a class='Label Label--primary btn3 label-btn' href=\"${$browser_relative_root}/build_visualization.php?filename={$fname}&directory={$dirpath}&relativeDirectory={$wsi_dirpath}&microns={$micron_x}\">Cancer Analysis</a>";
+                            $actions.="<a class='Label Label--primary btn3 label-btn' href=\"$browser_relative_root/build_visualization.php?filename={$fname}&directory={$dirpath}&relativeDirectory={$wsi_dirpath}&microns={$micron_x}\">Cancer Analysis</a>";
                         }
+
+                        if ($event === "mirax-importer") {
+                            if ($file_meta["event_data"][$i] === "tiff-generated") {
+                                $generated = true;
+                            } else if ($file_meta["event_data"][$i] === "tiff-failed") {
+                                $status = "Not Available!";
+                                $generated = true;
+                            }
+
+                        }
+                    }
+                    if (!$generated) {
+                        $status .= "Processing...";
                     }
                 }
 
 
                 if (FM_ADVANCED_MODE) {
-                    $actions.="<br><br><a onclick=\"viewerConfig.setTissue('$full_wsi_path');\" class='pointer'>Add as background.</a>
-<br><a onclick=\"viewerConfig.setShaderFor('$full_wsi_path');\" class='pointer'>Add as layer.</a>";
+                    $actions.="<a onclick=\"viewerConfig.setTissue('$full_wsi_path');\" class='pointer'>Add as background.</a>
+<a onclick=\"viewerConfig.setShaderFor('$full_wsi_path');\" class='pointer'>Add as layer.</a>";
                 }
 
                 $title_tags = "onclick=\"go('".FM_USER_ID."', false, '$fname', '$full_wsi_path');\" class=\"pointer\"";
@@ -561,13 +592,15 @@ EOF;
                 $onimageclick = "onclick=\"location.href = '$filelink';\"";
             }
 
-            if (function_exists('posix_getpwuid') && function_exists('posix_getgrgid')) {
-                $owner = posix_getpwuid(fileowner($full_path));
-                $group = posix_getgrgid(filegroup($full_path));
+            if ($show_file_details) {
+                $perms = substr(decoct(fileperms($full_path)), -4);
+                if (function_exists('posix_getpwuid') && function_exists('posix_getgrgid')) {
+                    $owner = posix_getpwuid(fileowner($full_path));
+                    $group = posix_getgrgid(filegroup($full_path));
+                }
+                if (!isset($owner["name"])) $owner = array('name' => '-');
+                if (!isset($group["name"])) $group = array('name' => '-');
             }
-
-            if (!isset($owner["name"])) $owner = array('name' => '-');
-            if (!isset($group["name"])) $group = array('name' => '-');
 
             ?>
             <tr class="viewer-config-draggable <?php echo $row_class;?>" <?php echo $container_attrs ?> data-source="<?php echo $full_wsi_path; ?>">
@@ -576,19 +609,20 @@ EOF;
                     <div class="icon-conatiner" <?php echo $onimageclick; ?>">
                         <?php echo $img ?>
                     </div>
-                    <div class="action-container" style="display: flex; flex-direction: column">
+                    <div class="action-container">
                         <div class="filename"><a <?php echo $title_tags ?>><?php echo $title_prefix . fm_convert_win($fname) ?></a><?php echo ($is_link ? ' &rarr; <i>' . readlink($full_path) . '</i>' : '') ?></div>
-                        <div class="viewer-actions hover-visible-only">
+                        <div class="viewer-actions">
                             <?php echo $actions ?>
                         </div>
                     </div>
                 </td>
+                <td><?php echo $status ?></td>
                 <td>
                     <span title="<?php printf('%s bytes', $filesize_raw) ?>"><?php echo $filesize ?></span>
                 </td>
                 <td><?php echo $modif ?>
                 </td>
-                <?php if (!FM_IS_WIN): ?>
+                <?php if ($show_file_details): ?>
                     <td><?php echo $perms ?></td>
                     <td><?php echo fm_enc($owner['name'] . ':' . $group['name']) ?></td>
                 <?php endif; ?>

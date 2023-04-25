@@ -90,7 +90,6 @@ td, th {
 #file-browser-form {
     display: flex;
     flex-direction: row;
-    width: calc(100vw - 250px);
 }
 
 
@@ -118,25 +117,30 @@ tr:hover td {
     vertical-align: bottom;
 }
 
-
-.tiff-preview {
+.tiff-container {
     height: 42px;
-    -webkit-transition: height 0.1s;
-    -moz-transition: height 0.1s;
-    -ms-transition: height 0.1s;
-    -o-transition: height 0.1s;
-    transition: height 0.1s;
+    position: relative;
 }
+
 
 .hover-visible-only {
     display: none;
 }
 
-tr:hover .tiff-preview {
-    height: 180px;
+tr .tiff-preview {
+    height: 42px;
+    position: relative;
+    transition: transform .1s;
 }
-tr:hover .hover-visible-only {
-    display: initial;
+tr .tiff-preview:hover {
+    /*height: 180px;*/
+    /*position: absolute;*/
+    z-index: 999;
+    box-shadow: 1px -1px 12px 0px var(--color-text-inverse);
+    -webkit-box-shadow: 1px -1px 12px 0px var(--color-text-inverse);
+    -moz-box-shadow: 1px -1px 12px 0px var(--color-text-inverse);
+
+    transform:scale(4);
 }
 
 .ellipsize-left {
@@ -322,6 +326,11 @@ input[type=checkbox] {
     background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAKklEQVR42mL5//8/Azbw+PFjrOJMDCSCUQ3EABZc4S0rKzsaSvTTABBgAMyfCMsY4B9iAAAAAElFTkSuQmCC)
 }
 
+.action-container {
+    display: flex; flex-direction: column;
+    flex: 1;
+}
+
 .inline-actions > a > i {
     font-size: 1em;
     margin-left: 5px;
@@ -444,12 +453,16 @@ input[type=checkbox] {
     -ms-filter    : "progid:DXImageTransform.Microsoft.Dropshadow(OffX=0, OffY=2, Color='#444')";
     filter        : "progid:DXImageTransform.Microsoft.Dropshadow(OffX=0, OffY=2, Color='#444')";
 }
-.not-yet-seen:hover:before {
-    content: attr(title);
-    font-family: inherit;
-    font-size: small;
-    animation: none;
-}
+/*.not-yet-seen:hover:before {*/
+/*    content: attr(title);*/
+/*    font-family: inherit;*/
+/*    font-size: small;*/
+/*    animation: none;*/
+/*    background: var(--color-bg-tertiary);*/
+/*    border: var(--color-border-secondary);*/
+/*    border-radius: 7px;*/
+/*    padding: 0px 7px;*/
+/*}*/
 
 .edit-file-actions > a, .edit-file-actions > button {
     padding: 5px 15px;
