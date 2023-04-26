@@ -304,7 +304,7 @@ if (!empty($files)) {
         $evt_data = $file["event_data"];
         if ($evt_data) {
             try {
-                $evt_data = json_decode($evt_data);
+                $evt_data = json_decode($evt_data, true);
                 $evt_data = $evt_data["status"] ?? $evt_data; //we use status only for now
             } catch (Exception $e) {
                 //pass, leave as-is
