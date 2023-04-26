@@ -301,12 +301,22 @@ if (!empty($files)) {
     //todo iterate metadata and group info
     $keys = xo_get_files_and_their_meta_for_user($keys, FM_USER_ID);
     foreach ($keys as $file) {
+        $evt_data = $file["event_data"];
+        if ($evt_data) {
+            try {
+                $evt_data = json_decode($evt_data);
+                $evt_data = $evt_data["status"] ?? $evt_data; //we use status only for now
+            } catch (Exception $e) {
+                //pass, leave as-is
+            }
+        }
+
         if (!isset($file_meta_data[$file["name"]])) {
             $file_meta_data[$file["name"]] = [
                 "id"=> $file["id"], "name"=> $file["name"], "created"=> $file["created"],
                 "status"=> $file["status"],  "root"=> $file["root"],  "biopsy"=> $file["biopsy"],
                 "seen"=> $file["seen"], "session"=> $file["session"], "events"=> [$file["event"]],
-                "event_data"=> [$file["event_data"]]
+                "event_data"=> [$evt_data]
             ];
         } else {
             $data = &$file_meta_data[$file["name"]];
@@ -315,7 +325,7 @@ if (!empty($files)) {
                 $data["session"] = $file["session"];
             }
             $data["events"][]=$file["event"];
-            $data["event_data"][]=$file["event_data"];
+            $data["event_data"][]=$evt_data;
         }
     }
 }
