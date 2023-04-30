@@ -567,14 +567,14 @@ EOF;
                     $generated = false;
                     foreach ($file_meta["events"] as $i=>$event) {
                         //todo support dynamic selection type based on fetched algo meta
-                        if (strpos($event, "histopipe_") === 0 && $file_meta["event_data"][$i] === "processing-finished") {
+                        if ($event === "prostate-prediction" && $file_meta["event_data"][$i] === "processing-finished") {
                             $actions.="<a class='Label Label--primary btn3 label-btn' href=\"$browser_relative_root/build_visualization.php?filename={$fname}&directory={$dirpath}&relativeDirectory={$wsi_dirpath}&microns={$micron_x}\">Cancer Analysis</a>";
                         }
 
                         if ($event === "mirax-importer") {
-                            if ($file_meta["event_data"][$i] === "tiff-generated") {
+                            if ($file_meta["event_data"][$i] === "processing-finished") {
                                 $generated = true;
-                            } else if ($file_meta["event_data"][$i] === "tiff-failed") {
+                            } else if ($file_meta["event_data"][$i] === "failed") {
                                 $status = "Not Available!";
                                 $generated = true;
                             }
@@ -582,7 +582,12 @@ EOF;
                         }
                     }
                     if (!$generated) {
-                        $status .= "Processing...";
+                        $created_at = strtotime($file_meta["created"]) ?? -1;
+                        if ($created_at > 0 && time() - $created_at < 3600) {
+                            $status .= " Processing...";
+                        } else {
+                            $status .= " Error (uploading)";
+                        }
                     }
                 }
 
