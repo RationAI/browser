@@ -747,6 +747,7 @@ function fm_show_nav_path($path)
 {
     ?>
     <nav class="navbar navbar-light bg-light navbar-expand-lg"">
+        <img src="<?php echo _FM_ASSETS_PATH?>rationai-color.svg" style="width: 150px"/>
 
         <?php
         $path = fm_clean_path($path);
