@@ -746,12 +746,13 @@ function fm_show_search_bar() {
 function fm_show_nav_path($path)
 {
     ?>
-    <nav class="navbar navbar-light bg-light navbar-expand-lg"">
-        <img src="<?php echo _FM_ASSETS_PATH?>rationai-color.svg" style="width: 150px"/>
-
         <?php
+        echo '<div class="nav-item break-word float-left mr-3" style="width: 120px;">';
+        include(_FM_ASSETS_PATH . 'rationai-color.svg');
+        echo '</div>';
+
         $path = fm_clean_path($path);
-        $root_url = "<a href='?p='><i class='fa fa-home' aria-hidden='true' title='" . FM_PATH . "'></i></a>";
+        $root_url = "<a href='?p=' style='vertical-align: middle'><i class='fa fa-home' aria-hidden='true' title='" . FM_PATH . "'></i></a>";
         $sep = '<i class="fa fa-caret-right text-secondary"></i>';
         if ($path != '') {
             $exploded = explode('/', $path);
