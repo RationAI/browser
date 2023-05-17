@@ -60,6 +60,7 @@ try {
 
     switch ($command) {
         case "remove":
+            //todo do not remove, just e.g. unlink
             require_presence($id, "string", "id");
             xo_annotations_remove($id, true);
             send_list_of_annotations_meta($tissue);

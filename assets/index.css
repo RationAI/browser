@@ -436,7 +436,7 @@ input[type=checkbox] {
 }
 
 .not-yet-seen {
-    background: var(--color-bg-backdrop);
+    background: var(--color-bg-tertiary);
     position: relative !important;
 }
 .not-yet-seen:before {

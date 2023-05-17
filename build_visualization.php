@@ -110,7 +110,7 @@ echo <<<EOF
 
    </script>
    </head><body>
-<span id='$relativeFileDir/$wsi_filename-meta' style='display: none' data-microns-x='{$_POST["microns"]}' data-microns-y=''></span>
+   <span id='$relativeFileDir/$wsi_filename-meta' style='display: none' data-microns-x='{$_GET["microns"]}' data-microns-y=''></span>
    <script>
       const data = $shader_data;
    const tissuePath = '$relativeFileDir/$wsi_filename';
