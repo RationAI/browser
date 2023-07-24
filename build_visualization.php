@@ -103,6 +103,8 @@ $shader_data = json_encode($specs);
 $viewer_url = FM_XOPAT_URL;
 $js_path = _FM_JS_PATH;
 $user_id = FM_USER_ID;
+$wsi_meta_api = FM_WSI_IMPORTER_API;
+global $browser_relative_root;
 echo <<<EOF
     
    <head>
@@ -112,11 +114,13 @@ echo <<<EOF
    </head><body>
    <span id='$relativeFileDir/$wsi_filename-meta' style='display: none' data-microns-x='{$_GET["microns"]}' data-microns-y=''></span>
    <script>
-      const data = $shader_data;
+   const data = $shader_data;
    const tissuePath = '$relativeFileDir/$wsi_filename';
    window.viewerConfig = new ViewerConfig({
         windowName: 'viewerConfig',
         viewerUrl: '$viewer_url',
+        importerMetaEndpoint: '$wsi_meta_api',
+        urlRoot: '$browser_relative_root',
         data: '',
    });
    
