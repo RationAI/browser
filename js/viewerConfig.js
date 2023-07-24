@@ -26,6 +26,40 @@ function fireForm(event, url, question) {
     form.submit();
 }
 
+//direct import of exported HTML session
+function openHtmlExport(exported, url) {
+    let child = window.open("about:blank","myChild");
+    try {
+        const {app, data} = JSON.parse(decodeURIComponent(exported));
+        let form = `
+      <form method="POST" id="redirect" action="${url}">
+        <input type="hidden" id="visualisation" name="visualisation">
+        <input type="submit" value="">
+      </form>
+      <script type="text/javascript">
+        document.getElementById("visualisation").value = \`${app.replaceAll("\\", "\\\\")}\`;
+        const form = document.getElementById("redirect");
+        let node;`;
+
+        for (let id in data) {
+            form += `node = document.createElement("input");
+node.setAttribute("type", "hidden");
+node.setAttribute("name", \`${id}\`);
+node.setAttribute("value", \`${data[id].replaceAll("\\", "\\\\")}\`);
+form.appendChild(node);`;
+        }
+
+        form += `
+form.submit();
+<\/script>`;
+        child.document.write(form);
+        child.document.close();
+    } catch (e) {
+        //todo error ...
+    }
+}
+
+
 class ViewerConfig {
 
     constructor(props, interactiveShaderConfigUrl) {
@@ -195,7 +229,7 @@ class ViewerConfig {
         return this;
     }
 
-    open() {
+    open(onFinish=()=>{}) {
         //without user disable session
         const plugins = this.props.data.plugins;
         if (!this.props.data.meta?.["user"] && plugins) {
@@ -203,13 +237,85 @@ class ViewerConfig {
             delete plugins["user-session"];
         }
 
-        document.getElementById("visualisation").value = this.export();
-        document.getElementById("redirect").submit();
+        if (this.props.importerMetaEndpoint) {
+            //fetch additional meta
+            const _this = this;
+            const url = `${this.props.importerMetaEndpoint}?ajax=bioFormatsOffset&tissue=${this._referencedTissue}`;
+            fetch(`${this.props.urlRoot}proxy.php?proxy=${encodeURIComponent(url)}`, {
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            }).then(
+                data => data.json()
+            ).then(
+                data => {
+                    //todo json parse ugly...
+                    _this.setPluginMeta("gui_annotations", JSON.parse(data.payload) || [0, 0], "convertors", "bioFormatsOffset");
+                    document.getElementById("visualisation").value = _this.export();
+                    document.getElementById("redirect").submit();
+                    onFinish();
+                }
+            ).catch(e => {
+                //todo error?
+
+                //just submit
+                if (confirm("Failed to read WSI metadata - some things (qupath annotations) might not work as expected. Continue?")) {
+                    document.getElementById("visualisation").value = _this.export();
+                    document.getElementById("redirect").submit();
+                    onFinish();
+                }
+            });
+
+        } else {
+            document.getElementById("visualisation").value = this.export();
+            document.getElementById("redirect").submit();
+            onFinish();
+
+        }
     }
 
-    setTissue(tissuePath) {
+    withNewTab(isNew) {
+        if (isNew) {
+            document.getElementById("redirect").setAttribute("target", "_blank");
+        } else {
+            document.getElementById("redirect").removeAttribute("target");
+        }
+        return this;
+    }
+
+    go(user, title, image, ...dataArray) {
+        //todo user ignored?
+        const _oldVisualOutput = this.hasVisualOutput;
+        const _oldData = this.props.data;
+
+        let data;
+        this.props.data = data = {};
+        this.hasVisualOutput = false;
+        this.setTissue(image);
+
+        //todo reuse?
+        if (dataArray.length < 1) {
+            delete data.visualizations;
+        } else {
+            let index = 0;
+            for (let item of dataArray) {
+                item.shader.dataReferences = [data.data.length];
+                data.data.push(item.data);
+                vis.shaders[index++] = item.shader;
+            }
+            data.visualizations.push(vis);
+        }
+
+        const _this = this;
+        this.open(() => {
+            _this.hasVisualOutput = _oldVisualOutput;
+            _this.props.data = _oldData;
+        });
+    }
+
+    setTissue(tissuePath, visual=true) {
         this._setImportTissue(tissuePath);
-        this._setRenderTissue(tissuePath);
+        if (visual) this._setRenderTissue(tissuePath);
         this.withSession(tissuePath); //todo dirty, and what if multiple files presented -> session stored to one of them :/
         return this;
     }
@@ -218,6 +324,35 @@ class ViewerConfig {
         if (this.hasVisualOutput && !this.visible) return;
         if (this._setImportShaderFor(dataPath, shaderType)) {
             this._setRenderLayer(dataPath);
+        }
+        return this;
+    }
+
+    setPluginMeta(plugin_id, value, ...keys) {
+        let plugins = this.props.data.plugins;
+        if (!plugins) {
+            this.props.data.plugins = plugins = {};
+        }
+
+        let p = plugins[plugin_id];
+        if (!p) {
+            this.props.data.plugins[plugin_id] = p = {};
+        }
+        function find(ctx, keyList) {
+          if (!ctx || keyList.length < 2) {
+              if (keyList.length === 1) return ctx;
+              return undefined;
+          }
+          const key = keyList.pop();
+          if (!ctx[key]) ctx[key] = {};
+          return find(ctx[key], keyList);
+        }
+        const context = find(p, keys.reverse());
+        if (!context) throw "Could not write meta for keys: " + keys.toString();
+        if (value === undefined || value === null) {
+            delete context[keys[keys.length-1]];
+        } else {
+            context[keys[keys.length-1]] = value;
         }
         return this;
     }
@@ -315,6 +450,7 @@ class ViewerConfig {
             lossless: false,
             microns: microns
         }];
+        this._referencedTissue = tissuePath;
         this.checkIsVisible();
     }
 

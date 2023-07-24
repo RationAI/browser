@@ -597,7 +597,7 @@ EOF;
 <a onclick=\"viewerConfig.setShaderFor('$full_wsi_path');\" class='pointer'>Add as layer.</a>";
                 }
 
-                $title_tags = "onclick=\"go('".FM_USER_ID."', false, '$fname', '$full_wsi_path');\" class=\"pointer\"";
+                $title_tags = "onclick=\"viewerConfig.withNewTab(false).go('".FM_USER_ID."', '$fname', '$full_wsi_path');\" class=\"pointer\"";
                 $title_prefix = "$title_prefix<i class='xopat'>&#xe802;</i>";
 
             } else {
@@ -643,7 +643,7 @@ EOF;
                 <?php endif; ?>
                 <td class="inline-actions">
                     <?php if ($is_tiff) {  ?>
-                        <a title="Open in Viewer" onclick="go('<?php echo FM_USER_ID; ?>', false, '<?php echo $fname; ?>', '<?php echo $full_wsi_path; ?>');" class="pointer"><i class='xopat'>&#xe802;</i></a>
+                        <a title="Open in Viewer" onclick="viewerConfig.withNewTab(false).go('<?php echo FM_USER_ID; ?>', '<?php echo $fname; ?>', '<?php echo $full_wsi_path; ?>');" class="pointer"><i class='xopat'>&#xe802;</i></a>
                       <?php
 
                     } else if (FM_WSI_ANALYSIS_PAGE && strtolower($ext) === "mrxs") {
@@ -713,6 +713,8 @@ EOF;
             viewerUrl: '<?php echo FM_XOPAT_URL; ?>',
             containerId: "viewer-configurator",
             tiffPreviewMaker: dziImagePreviewMaker,
+            importerMetaEndpoint: '<?php echo FM_WSI_IMPORTER_API; ?>',
+            urlRoot: '<?php echo $browser_relative_root ?>',
             data: `<?php echo $_POST['viewer-config'] ?? ''; ?>`,
         }, '<?php echo FM_XOPAT_SOURCES; ?>');
 
@@ -822,7 +824,6 @@ header("Pragma: no-cache");
         <link rel="stylesheet" href="<?php echo _FM_JS_PATH ?>highlight.min.js">
     <?php endif; ?>
 
-    <script type="text/javascript" src="<?php echo _FM_JS_PATH ?>viewerRun.js"></script>
     <script type="text/javascript" src="<?php echo _FM_JS_PATH ?>taggle.js"></script>
     <script type="text/javascript" src="<?php echo _FM_JS_PATH ?>viewerConfig.js"></script>
     <link rel="stylesheet" href="<?php echo _FM_ASSETS_PATH ?>viewer_config.css">

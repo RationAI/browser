@@ -77,6 +77,8 @@ defined('FM_EXTENSION') || define('FM_EXTENSION', '');
 
 //Path to the analysis enpoint, set as false if you don't know
 defined('FM_WSI_ANALYSIS_PAGE') || define('FM_WSI_ANALYSIS_PAGE', "http://localhost:8081/importer/server/analysis.php");
+//todo in future, do not remove the script name, enter only server path and add scripts manually
+define ('FM_WSI_IMPORTER_API', dirname(FM_WSI_ANALYSIS_PAGE) . "/public/index.php");
 
 //Relative or absolute path to the viewer source src folder. Only required for shader configurator.
 defined('FM_XOPAT_SOURCES') || define('FM_XOPAT_SOURCES', '/xopat/user_setup.php');
