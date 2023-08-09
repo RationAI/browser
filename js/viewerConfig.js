@@ -240,7 +240,7 @@ class ViewerConfig {
         if (this.props.importerMetaEndpoint) {
             //fetch additional meta
             const _this = this;
-            const url = `${this.props.importerMetaEndpoint}?ajax=bioFormatsOffset&tissue=${this._referencedTissue}`;
+            const url = `${this.props.importerMetaEndpoint}?ajax=imageCoordinatesOffset&tissue=${this._referencedTissue}`;
             fetch(`${this.props.urlRoot}proxy.php?proxy=${encodeURIComponent(url)}`, {
                 headers: {
                     'Content-Type': 'application/json',
@@ -250,7 +250,7 @@ class ViewerConfig {
             ).then(
                 data => {
                     //todo json parse ugly...
-                    _this.setPluginMeta("gui_annotations", JSON.parse(data.payload) || [0, 0], "convertors", "bioFormatsOffset");
+                    _this.setPluginMeta("gui_annotations", JSON.parse(data.payload) || [0, 0], "convertors", "imageCoordinatesOffset");
                     document.getElementById("visualisation").value = _this.export();
                     document.getElementById("redirect").submit();
                     onFinish();
