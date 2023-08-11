@@ -237,6 +237,21 @@ class ViewerConfig {
             delete plugins["user-session"];
         }
 
+        //todo ugly...
+        const setQuPathPresets = () => {
+            this.setPluginMeta("gui_annotations", [{"color":"#b4b4b4","factoryID":"polygon","presetID":
+                    "Ignore*","meta":{"category":{"name":"Category","value":"Ignore*"}}},{"color":"#c80000","factoryID":"polygon",
+                "presetID":"Tumor","meta":{"category":{"name":"Category","value":"Tumor"}}},{"color":"#96c896","factoryID":"polygon",
+                "presetID":"Stroma","meta":{"category":{"name":"Category","value":"Stroma"}}},{"color":"#a05aa0","factoryID":"polygon",
+                "presetID":"Immune cells","meta":{"category":{"name":"Category","value":"Immune cells"}}},{"color":"#323232",
+                "factoryID":"polygon","presetID":"Necrosis","meta":{"category":{"name":"Category","value":"Necrosis"}}},{"color":
+                    "#0000b4","factoryID":"polygon","presetID":"Region*","meta":{"category": {"name":"Category","value":"Region*"}}},
+                {"color":"#fa3e3e","factoryID":"polygon","presetID":"Positive","meta":{"category":{"name":"Category","value":"Positive"
+                        }}},{"color":"#7070e1","factoryID":"polygon","presetID":"Negative","meta":{"category":{"name":"Category","value":
+                                "Negative"}}}], "staticPresets");
+            this.setPluginMeta("gui_annotations", false, "enablePresetModify");
+        };
+
         if (this.props.importerMetaEndpoint) {
             //fetch additional meta
             const _this = this;
@@ -251,6 +266,7 @@ class ViewerConfig {
                 data => {
                     //todo json parse ugly...
                     _this.setPluginMeta("gui_annotations", JSON.parse(data.payload) || [0, 0], "convertors", "imageCoordinatesOffset");
+                    setQuPathPresets();
                     document.getElementById("visualisation").value = _this.export();
                     document.getElementById("redirect").submit();
                     onFinish();
@@ -260,6 +276,7 @@ class ViewerConfig {
 
                 //just submit
                 if (confirm("Failed to read WSI metadata - some things (qupath annotations) might not work as expected. Continue?")) {
+                    setQuPathPresets();
                     document.getElementById("visualisation").value = _this.export();
                     document.getElementById("redirect").submit();
                     onFinish();

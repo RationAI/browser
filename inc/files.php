@@ -810,9 +810,9 @@ header("Pragma: no-cache");
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
     <link rel="stylesheet" href="<?php echo _FM_ASSETS_PATH ?>primer_css.css">
-    <link rel="stylesheet" href="<?php echo _FM_ASSETS_PATH ?>xopat.css">
+    <link rel="stylesheet" href="<?php echo _FM_ASSETS_PATH ?>xopat.css?v=<?php echo VERSION ?>">
     <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-    <link rel="stylesheet" href="<?php echo _FM_ASSETS_PATH ?>index.css">
+    <link rel="stylesheet" href="<?php echo _FM_ASSETS_PATH ?>index.css?v=<?php echo VERSION ?>">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 
     <link rel="apple-touch-icon" sizes="180x180" href="<?php echo _FM_ASSETS_PATH ?>apple-touch-icon.png">
@@ -824,9 +824,9 @@ header("Pragma: no-cache");
         <link rel="stylesheet" href="<?php echo _FM_JS_PATH ?>highlight.min.js">
     <?php endif; ?>
 
-    <script type="text/javascript" src="<?php echo _FM_JS_PATH ?>taggle.js"></script>
-    <script type="text/javascript" src="<?php echo _FM_JS_PATH ?>viewerConfig.js"></script>
-    <link rel="stylesheet" href="<?php echo _FM_ASSETS_PATH ?>viewer_config.css">
+    <script type="text/javascript" src="<?php echo _FM_JS_PATH ?>taggle.js?v=<?php echo VERSION ?>"></script>
+    <script type="text/javascript" src="<?php echo _FM_JS_PATH ?>viewerConfig.js?v=<?php echo VERSION ?>"></script>
+    <link rel="stylesheet" href="<?php echo _FM_ASSETS_PATH ?>viewer_config.css?v=<?php echo VERSION ?>">
     <script type="text/javascript">window.csrf = '<?php echo $_SESSION['token']; ?>';</script>
 
 </head>
