@@ -252,7 +252,7 @@ class ViewerConfig {
             this.setPluginMeta("gui_annotations", false, "enablePresetModify");
         };
 
-        if (this.props.importerMetaEndpoint) {
+        if (this.props.importerMetaEndpoint && this._referencedTissue.includes(".mrxs")) {
             //fetch additional meta
             const _this = this;
             const url = `${this.props.importerMetaEndpoint}?ajax=imageCoordinatesOffset&tissue=${this._referencedTissue}`;
