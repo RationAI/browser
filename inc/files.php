@@ -564,10 +564,11 @@ EOF;
                         $actions .= "<a class='Label Label--primary label-btn' onclick='openHtmlExport(`$exports`, `".FM_XOPAT_URL."`)'> Open saved session. </a>";
                     }
 
-                    $generated = false;
+                    $generated = false; $no_prediction = true;
                     foreach ($file_meta["events"] as $i=>$event) {
                         //todo support dynamic selection type based on fetched algo meta
-                        if ($event === "prostate-prediction" && $file_meta["event_data"][$i] === "processing-finished") {
+                        if ($no_prediction && $event === "prostate-prediction" && $file_meta["event_data"][$i] === "processing-finished") {
+                            $no_prediction = false;
                             $actions.="<a class='Label Label--primary btn3 label-btn' href=\"$browser_relative_root/build_visualization.php?filename={$fname}&directory={$dirpath}&relativeDirectory={$wsi_dirpath}&microns={$micron_x}\">Cancer Analysis Results</a>";
                         }
 

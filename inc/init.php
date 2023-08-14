@@ -91,7 +91,7 @@ if (isset($_GET['logout'])) {
 
 
 //todo support this feature
-const FM_READONLY = false;
+const FM_READONLY = true;
 const FM_IS_WIN = DIRECTORY_SEPARATOR == '\\';
 
 // get path
