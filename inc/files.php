@@ -564,11 +564,12 @@ EOF;
                         $actions .= "<a class='Label Label--primary label-btn' onclick='openHtmlExport(`$exports`, `".FM_XOPAT_URL."`)'> Open saved session. </a>";
                     }
 
-                    $generated = false;
+                    $generated = false; $no_prediction = true;
                     foreach ($file_meta["events"] as $i=>$event) {
                         //todo support dynamic selection type based on fetched algo meta
-                        if ($event === "prostate-prediction" && $file_meta["event_data"][$i] === "processing-finished") {
-                            $actions.="<a class='Label Label--primary btn3 label-btn' href=\"$browser_relative_root/build_visualization.php?filename={$fname}&directory={$dirpath}&relativeDirectory={$wsi_dirpath}&microns={$micron_x}\">Cancer Analysis</a>";
+                        if ($no_prediction && $event === "prostate-prediction" && $file_meta["event_data"][$i] === "processing-finished") {
+                            $no_prediction = false;
+                            $actions.="<a class='Label Label--primary btn3 label-btn' href=\"$browser_relative_root/build_visualization.php?filename={$fname}&directory={$dirpath}&relativeDirectory={$wsi_dirpath}&microns={$micron_x}\">Cancer Analysis Results</a>";
                         }
 
                         if ($event === "mirax-importer") {
@@ -711,7 +712,7 @@ EOF;
         window.viewerConfig = new ViewerConfig({
             windowName: 'viewerConfig',
             viewerUrl: '<?php echo FM_XOPAT_URL; ?>',
-            containerId: "viewer-configurator",
+            containerId: '<?php echo FM_ADVANCED_MODE ? "viewer-configurator" : "" ?>',
             tiffPreviewMaker: dziImagePreviewMaker,
             importerMetaEndpoint: '<?php echo FM_WSI_IMPORTER_API; ?>',
             urlRoot: '<?php echo $browser_relative_root ?>',
