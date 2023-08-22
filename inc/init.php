@@ -6,6 +6,8 @@ if (!defined('PATH_TO_IS_MANAGER')) {
     die("Cannot include the file directly without providing PATH_TO_IS_MANAGER global variable with path to the browser repository root.");
 }
 
+define('USES_DATABASE', (bool)XO_DB_ROOT);
+
 //for debug see what's going on
 set_exception_handler(function ($exception) {
     echo "Uncaught exception: " , $exception->getMessage(), "\n";
@@ -46,7 +48,8 @@ if (defined('FM_EMBED')) {
 
     session_cache_limiter('');
     session_name('filemanager');
-    define('_FM_USE_AUTH', true);
+
+    define('_FM_USE_AUTH', FM_USE_AUTH && USES_DATABASE);
 }
 session_start();
 

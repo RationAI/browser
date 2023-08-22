@@ -8,7 +8,7 @@ if (!defined('PATH_TO_IS_MANAGER')) {
 //init setup, private stuff, configs
 require PATH_TO_IS_MANAGER . 'inc/init.php';
 //include DB proxy
-require_once XO_DB_ROOT . "include.php";
+if (USES_DATABASE) require_once XO_DB_ROOT . "include.php";
 //run browser
 require PATH_TO_IS_MANAGER . 'inc/login_functions.php';
 
@@ -36,7 +36,7 @@ function finish($success, $type) {
 };
 
 // Web APP Auth Endpoint
-if (FM_USE_AUTH) {
+if (_FM_USE_AUTH) {
     require_once PATH_TO_IS_MANAGER . 'inc/login_functions.php';
     fm_require_or_show_login(function (){
         finish(true, "login");

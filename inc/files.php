@@ -18,7 +18,7 @@ if(isset($_GET['toggleTree'])) {
 }
 
 // Auth
-if (FM_USE_AUTH) {
+if (_FM_USE_AUTH) {
     require_once PATH_TO_IS_MANAGER . 'inc/login_functions.php';
     fm_require_or_show_login(function (){
         //do nothing on logged
@@ -299,7 +299,7 @@ if (!empty($files)) {
     array_multisort($keys, SORT_NATURAL | SORT_FLAG_CASE, $files);
 
     //todo iterate metadata and group info
-    $keys = xo_get_files_and_their_meta_for_user($keys, FM_USER_ID);
+    $keys = USES_DATABASE ? xo_get_files_and_their_meta_for_user($keys, FM_USER_ID) : array();
     foreach ($keys as $file) {
         $evt_data = $file["event_data"];
         if ($evt_data) {
@@ -783,7 +783,7 @@ function fm_show_nav_path($path)
 <!--                <li class="nav-item"><a class="nav-link mx-1" title="New folder" href style="outline: none;" data-toggle="modal" data-target="#createNewItem"><i class="fa fa-plus-square fa-fw"></i> New Item</a></li>-->
 <!--                <li class="nav-item"><a href="?toggleTree=true" class="nav-link mx-1" title="Toggle Directories List"><i class="fa fa-eye-slash fa-fw"></i> Toggle Tree View</a></li>-->
 <!--            --><?php //endif; ?>
-            <?php if (FM_USE_AUTH): ?><li class="nav-item"><a class="nav-link ml-1" title="Logout" href="?logout=1"><i class="fa fa-sign-out fa-fw" aria-hidden="true"></i> Log Out</a></li><?php endif; ?>
+            <?php if (_FM_USE_AUTH): ?><li class="nav-item"><a class="nav-link ml-1" title="Logout" href="?logout=1"><i class="fa fa-sign-out fa-fw" aria-hidden="true"></i> Log Out</a></li><?php endif; ?>
         </div>
         </div>
     </nav>

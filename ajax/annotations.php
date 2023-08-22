@@ -1,4 +1,7 @@
 <?php
+if (!USES_DATABASE) {
+    send(500, "Annotations cannot be stored without a database!");
+}
 
 if (!defined('PATH_TO_IS_MANAGER')) {
     define('PATH_TO_IS_MANAGER', '../');
