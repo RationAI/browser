@@ -6,17 +6,19 @@ if (!defined('PATH_TO_IS_MANAGER')) {
     die("Cannot include the file directly without providing PATH_TO_IS_MANAGER global variable with path to the browser repository root.");
 }
 
-define('USES_DATABASE', (bool)XO_DB_ROOT);
-
 //for debug see what's going on
 set_exception_handler(function ($exception) {
     echo "Uncaught exception: " , $exception->getMessage(), "\n";
+    var_dump($exception->getTraceAsString());
 });
 
 //custom configuration file
 if (!defined('FM_CONFIG') && is_file(PATH_TO_IS_MANAGER . 'config.php')) {
     define('FM_CONFIG', PATH_TO_IS_MANAGER . 'config.php');
 }
+
+require_once PATH_TO_IS_MANAGER . "inc/config.php";
+define('USES_DATABASE', (bool)XO_DB_ROOT);
 
 // Parse input data
 if (!count($_POST)) {
@@ -27,8 +29,6 @@ if (!count($_POST)) {
         $_POST = [];
     }
 }
-
-require_once PATH_TO_IS_MANAGER . "inc/config.php";
 
 // if fm included
 if (defined('FM_EMBED')) {

@@ -97,10 +97,5 @@ defined('_FM_ASSETS_PATH') || define('_FM_ASSETS_PATH', FM_URL . 'assets/');
 // where are js files to look for
 defined('_FM_JS_PATH') || define('_FM_JS_PATH', FM_URL . 'js/');
 
-if (defined(FM_XO_DB_ROOT)) {
-    define('XO_DB_ROOT', PATH_TO_IS_MANAGER . FM_XO_DB_ROOT);
-} else {
-    define('XO_DB_ROOT', false);
-}
-
+define('XO_DB_ROOT', defined(FM_XO_DB_ROOT) ? (PATH_TO_IS_MANAGER . FM_XO_DB_ROOT) : false);
 

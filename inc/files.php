@@ -714,7 +714,7 @@ EOF;
             viewerUrl: '<?php echo FM_XOPAT_URL; ?>',
             containerId: '<?php echo FM_ADVANCED_MODE ? "viewer-configurator" : "" ?>',
             tiffPreviewMaker: dziImagePreviewMaker,
-            importerMetaEndpoint: '<?php echo FM_WSI_IMPORTER_API; ?>',
+            importerMetaEndpoint: '<?php echo FM_WSI_IMPORTER_API ? FM_WSI_IMPORTER_API : "undefined"; ?>',
             urlRoot: '<?php echo $browser_relative_root ?>',
             data: `<?php echo $_POST['viewer-config'] ?? ''; ?>`,
         }, '<?php echo FM_XOPAT_SOURCES; ?>');

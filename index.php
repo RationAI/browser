@@ -8,6 +8,8 @@ if (!defined('PATH_TO_IS_MANAGER')) {
 //init setup, private stuff, configs
 require PATH_TO_IS_MANAGER . 'inc/init.php';
 //include DB proxy
-if (USES_DATABASE) require_once XO_DB_ROOT . "include.php";
+if (USES_DATABASE) {
+    require_once XO_DB_ROOT . "include.php";
+}
 //run browser
 require PATH_TO_IS_MANAGER . 'inc/files.php';
