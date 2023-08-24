@@ -1,10 +1,13 @@
 <?php
+define('VERSION', '0.1.1');
 
-//Default Image Server Preview URL Maker (for tif pyramid previews)
-//Default Image Server Preview URL Maker (for tif pyramid previews)
-$image_preview_url_maker = function ($file) {
-    return "/iipsrv/iipsrv.fcgi?Deepzoom={$file}_files/1/0_0.jpg";
-};
+if (!isset($image_preview_url_maker)) {
+    //Default Image Server Preview URL Maker (for tif pyramid previews)
+    //Default Image Server Preview URL Maker (for tif pyramid previews)
+    $image_preview_url_maker = function ($file) {
+        return "";
+    };
+}
 
 //Array of folders excluded from listing
 $GLOBALS['exclude_folders'] = array(
@@ -22,7 +25,7 @@ if (defined('FM_DEBUG') && FM_DEBUG) {
 }
 
 //Url of the Viewer
-defined('FM_XOPAT_URL') || define('FM_XOPAT_URL', "/xopat/index.php");
+defined('FM_XOPAT_URL') || define('FM_XOPAT_URL', "index.php");
 
 // Default language
 defined('FM_LANG') || define('FM_LANG', 'en');
@@ -42,7 +45,7 @@ defined('FM_HIGHLIGHTJS_STYLE') || define('FM_HIGHLIGHTJS_STYLE', 'vs');
 defined('FM_DEFAULT_TIMEZONE') || define('FM_DEFAULT_TIMEZONE', 'Europe/Prague'); // UTC
 
 // Root path for file manager
-defined('FM_BROWSE_ROOT') || define('FM_BROWSE_ROOT', '/var/www/data/');
+defined('FM_BROWSE_ROOT') || define('FM_BROWSE_ROOT', '/');
 
 // Default root for the WSI server
 //todo unused
@@ -76,17 +79,16 @@ defined('FM_DATETIME_FORMAT') || define('FM_DATETIME_FORMAT', 'd.m.y H:i');
 defined('FM_EXTENSION') || define('FM_EXTENSION', '');
 
 //Path to the analysis enpoint, set as false if you don't know
-defined('FM_WSI_ANALYSIS_PAGE') || define('FM_WSI_ANALYSIS_PAGE', "http://localhost:8081/importer/server/analysis.php");
+defined('FM_WSI_ANALYSIS_PAGE') || define('FM_WSI_ANALYSIS_PAGE', false);
 //todo in future, do not remove the script name, enter only server path and add scripts manually
-define ('FM_WSI_IMPORTER_API', dirname(FM_WSI_ANALYSIS_PAGE) . "/public/index.php");
+define ('FM_WSI_IMPORTER_API', FM_WSI_ANALYSIS_PAGE ? (dirname(FM_WSI_ANALYSIS_PAGE) . "/public/index.php") : false);
 
 //Relative or absolute path to the viewer source src folder. Only required for shader configurator.
-defined('FM_XOPAT_SOURCES') || define('FM_XOPAT_SOURCES', '/xopat/user_setup.php');
+defined('FM_XOPAT_SOURCES') || define('FM_XOPAT_SOURCES', 'user_setup.php');
 
 // Path to the database repository root relative to this repository
 defined('FM_XO_DB_ROOT') || define('FM_XO_DB_ROOT', "../xo_db/");
 
-// DEFINE ALL HARDCODED VALUES
 // where are php files to look for
 defined('_FM_SOURCES_PATH') || define('_FM_SOURCES_PATH', FM_URL . 'inc');
 
@@ -96,7 +98,5 @@ defined('_FM_ASSETS_PATH') || define('_FM_ASSETS_PATH', FM_URL . 'assets/');
 // where are js files to look for
 defined('_FM_JS_PATH') || define('_FM_JS_PATH', FM_URL . 'js/');
 
-define('XO_DB_ROOT', PATH_TO_IS_MANAGER . FM_XO_DB_ROOT);
-
-
+define('XO_DB_ROOT', defined('FM_XO_DB_ROOT') && FM_XO_DB_ROOT ? (PATH_TO_IS_MANAGER . FM_XO_DB_ROOT) : false);
 

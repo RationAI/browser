@@ -37,12 +37,12 @@ set_exception_handler(function (Throwable $exception) {
 
 require_once PATH_TO_IS_MANAGER . 'inc/init.php';
 //db proxy
-require_once XO_DB_ROOT . "include.php";
+if (USES_DATABASE) require_once XO_DB_ROOT . "include.php";
 
 //Checks, defaults
 
 //todo some things will fail if they become un-registered make sure
 //the registration will stay until they are active, e.g. by constant refresh!
-if (FM_USE_AUTH && !FM_LOGGED) {
+if (_FM_USE_AUTH && !FM_LOGGED) {
     send(403, ["status"=>"unauthorized"]);
 }

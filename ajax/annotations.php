@@ -1,9 +1,13 @@
 <?php
-
 if (!defined('PATH_TO_IS_MANAGER')) {
     define('PATH_TO_IS_MANAGER', '../');
 }
 require_once PATH_TO_IS_MANAGER . 'ajax/ajax_init.php';
+
+if (!USES_DATABASE) {
+    send(403, "Annotations cannot be stored without a database!");
+}
+
 
 //The code
 $protocol = $command = $id = $tissue = $data = $metadata = null;

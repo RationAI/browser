@@ -104,6 +104,7 @@ $viewer_url = FM_XOPAT_URL;
 $js_path = _FM_JS_PATH;
 $user_id = FM_USER_ID;
 $wsi_meta_api = FM_WSI_IMPORTER_API;
+$wsi_meta_api = $wsi_meta_api ? "'{$wsi_meta_api}'" : "undefined";
 global $browser_relative_root;
 echo <<<EOF
     
@@ -119,12 +120,12 @@ echo <<<EOF
    window.viewerConfig = new ViewerConfig({
         windowName: 'viewerConfig',
         viewerUrl: '$viewer_url',
-        importerMetaEndpoint: '$wsi_meta_api',
+        importerMetaEndpoint: $wsi_meta_api,
         urlRoot: '$browser_relative_root',
         data: '',
    });
    
-   viewerConfig.setTissue(tissuePath);
+   viewerConfig.setPlainWSI(tissuePath);
    
    let run = false;
    for (let goal of data) {

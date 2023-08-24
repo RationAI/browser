@@ -237,7 +237,22 @@ class ViewerConfig {
             delete plugins["user-session"];
         }
 
-        if (this.props.importerMetaEndpoint) {
+        //todo ugly...
+        const setQuPathPresets = () => {
+            this.setPluginMeta("gui_annotations", [{"color":"#b4b4b4","factoryID":"polygon","presetID":
+                    "Ignore*","meta":{"category":{"name":"Category","value":"Ignore*"}}},{"color":"#c80000","factoryID":"polygon",
+                "presetID":"Tumor","meta":{"category":{"name":"Category","value":"Tumor"}}},{"color":"#96c896","factoryID":"polygon",
+                "presetID":"Stroma","meta":{"category":{"name":"Category","value":"Stroma"}}},{"color":"#a05aa0","factoryID":"polygon",
+                "presetID":"Immune cells","meta":{"category":{"name":"Category","value":"Immune cells"}}},{"color":"#323232",
+                "factoryID":"polygon","presetID":"Necrosis","meta":{"category":{"name":"Category","value":"Necrosis"}}},{"color":
+                    "#0000b4","factoryID":"polygon","presetID":"Region*","meta":{"category": {"name":"Category","value":"Region*"}}},
+                {"color":"#fa3e3e","factoryID":"polygon","presetID":"Positive","meta":{"category":{"name":"Category","value":"Positive"
+                        }}},{"color":"#7070e1","factoryID":"polygon","presetID":"Negative","meta":{"category":{"name":"Category","value":
+                                "Negative"}}}], "staticPresets");
+            this.setPluginMeta("gui_annotations", false, "enablePresetModify");
+        };
+
+        if (this.props.importerMetaEndpoint && this._referencedTissue.includes(".mrxs")) {
             //fetch additional meta
             const _this = this;
             const url = `${this.props.importerMetaEndpoint}?ajax=imageCoordinatesOffset&tissue=${this._referencedTissue}`;
@@ -251,6 +266,7 @@ class ViewerConfig {
                 data => {
                     //todo json parse ugly...
                     _this.setPluginMeta("gui_annotations", JSON.parse(data.payload) || [0, 0], "convertors", "imageCoordinatesOffset");
+                    setQuPathPresets();
                     document.getElementById("visualisation").value = _this.export();
                     document.getElementById("redirect").submit();
                     onFinish();
@@ -260,6 +276,7 @@ class ViewerConfig {
 
                 //just submit
                 if (confirm("Failed to read WSI metadata - some things (qupath annotations) might not work as expected. Continue?")) {
+                    setQuPathPresets();
                     document.getElementById("visualisation").value = _this.export();
                     document.getElementById("redirect").submit();
                     onFinish();
@@ -284,20 +301,36 @@ class ViewerConfig {
     }
 
     go(user, title, image, ...dataArray) {
-        //todo user ignored?
-        const _oldVisualOutput = this.hasVisualOutput;
-        const _oldData = this.props.data;
+        this.setPlainWSI(image);
+        this._goFinish(user, title, ...dataArray);
+    }
 
-        let data;
-        this.props.data = data = {};
+    goPlain(user, title, image, ...dataArray) {
+        this._goInit();
+        this.setPlainImage(image);
+        this._goFinish(user, title, ...dataArray);
+    }
+
+    _goInit() {
+        this._oldVisualOutput = this.hasVisualOutput;
+        this._oldData = this.props.data;
+
+        this.props.data = {};
         this.hasVisualOutput = false;
-        this.setTissue(image);
+    }
 
+    _goFinish(user, title, ...dataArray) {
+        //todo user ignored?
+        let data = this.props.data;
         //todo reuse?
         if (dataArray.length < 1) {
             delete data.visualizations;
         } else {
-            let index = 0;
+            let index = 0,
+                vis = {
+                    lossless: true,
+                    shaders: {}
+                };
             for (let item of dataArray) {
                 item.shader.dataReferences = [data.data.length];
                 data.data.push(item.data);
@@ -308,15 +341,31 @@ class ViewerConfig {
 
         const _this = this;
         this.open(() => {
-            _this.hasVisualOutput = _oldVisualOutput;
-            _this.props.data = _oldData;
+            _this.hasVisualOutput = _this._oldVisualOutput;
+            delete _this._oldVisualOutput;
+            _this.props.data = _this._oldData;
+            delete _this._oldData;
         });
     }
 
-    setTissue(tissuePath, visual=true) {
+    setPlainWSI(tissuePath, visual=true) {
         this._setImportTissue(tissuePath);
-        if (visual) this._setRenderTissue(tissuePath);
+        if (visual && this.hasVisualOutput) this._setRenderTissue(tissuePath);
         this.withSession(tissuePath); //todo dirty, and what if multiple files presented -> session stored to one of them :/
+        return this;
+    }
+
+    setPlainImage(url, visual=true) {
+        //todo problem if in safe mode, does not work :/
+        this._setImportTissue(url);
+        //change protocol -> plain image object config
+        this.props.data.background[0].protocol = `({type:'image',url:data,buildPyramid:false})`;
+        if (visual && this.hasVisualOutput) {
+            let filename = url.split("/");
+            filename = filename[filename.length - 1];
+            this._setRenderBackground(filename, url);
+        }
+        this.withSession(url);
         return this;
     }
 
@@ -456,15 +505,17 @@ class ViewerConfig {
 
     _setRenderTissue(tissuePath) {
         if (!this.hasVisualOutput) return;
-
         let filename = tissuePath.split("/");
         filename = filename[filename.length - 1];
+        this._setRenderBackground(filename, this.imagePreviewMaker(tissuePath));
+    }
 
+    _setRenderBackground(name, url) {
         document.getElementById("viewer-config-banner").innerHTML = `
-<img id="viewer-config-banner-image" class="banner-image" src="${this.imagePreviewMaker(tissuePath)}">
+<img id="viewer-config-banner-image" class="banner-image" src="${url}">
 <div class="width-full position-absolute bottom-0" style="height: 60px; background: background: var(--color-bg-primary);
 background: linear-gradient(0deg, var(--color-bg-primary) 0%, transparent 100%);"></div>
-<h3 class="position-absolute bottom-0 f3-light mx-3 my-2 no-wrap overflow-hidden">${filename}</h3>
+<h3 class="position-absolute bottom-0 f3-light mx-3 my-2 no-wrap overflow-hidden">${name}</h3>
 `;
     }
 
