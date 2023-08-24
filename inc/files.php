@@ -123,7 +123,7 @@ if (isset($_GET['view'])) {
     }
 
 
-    $file_url = FM_DIRECT_FILES_URL . fm_convert_win(fm_clean_path(FM_USER["root"]) . '/' . $rel_path . '/' .$file);
+    $file_url = fm_get_direct_file_url($file, $rel_path);
     $file_path = $path . '/' . $file;
     $wsi_file_path = $wsi_path . '/' . $file;
 
@@ -362,7 +362,7 @@ EOF;
     ?>
 
 <form id="file-browser-form" class="mt-3 mx-3 flex-grow-0" action="" method="post" style="<?php echo FM_ADVANCED_MODE ? 'width: calc(100vw - 250px);' : 'width: 100vw;' ?>">
-    <input type="hidden" name="viewer-config" value="">
+    <input type="hidden" name="viewer-config" id="viewer-config" value="">
     <input type="hidden" name="p" value="<?php echo fm_enc(FM_PATH) ?>">
     <input type="hidden" name="token" value="<?php echo $_SESSION['token']; ?>">
     <input type="hidden" name="group" value="1">
@@ -521,12 +521,14 @@ EOF;
             $title_prefix = "<span class='ellipsize-left path-preview' title='$file_data[3]'>$file_data[3]</span>";
 
             $is_link = is_link($full_path);
-            $ext = pathinfo($fname, PATHINFO_EXTENSION);
-            $is_tiff = strtolower($ext) === "tiff" || strtolower($ext) === "tif";
+            $ext = strtolower(pathinfo($fname, PATHINFO_EXTENSION));
+            $is_tiff = $ext === "tiff" || $ext === "tif";
+            $is_plain_image = $ext === "png" || $ext === "jpg" || $ext === "jpeg";
             $actions = ""; $container_attrs = "";
             $modif = date("d.m.y H:i", filemtime($full_path));
             $filesize_raw = filesize($full_path);
             $filesize = fm_get_filesize($filesize_raw);
+            $file_full_url = fm_get_direct_file_url($full_rel_path);
             $filelink = '?p=' . urlencode($rel_dirpath) . '&amp;view=' . urlencode($fname);
             $all_files_size += $filesize_raw;
             $img = $title_tags = $onimageclick = "";
@@ -594,13 +596,24 @@ EOF;
 
 
                 if (FM_ADVANCED_MODE) {
-                    $actions.="<a onclick=\"viewerConfig.setTissue('$full_wsi_path');\" class='pointer'>Add as background.</a>
+                    $actions.="<a onclick=\"viewerConfig.setPlainWSI('$full_wsi_path');\" class='pointer'>Add as background.</a>
 <a onclick=\"viewerConfig.setShaderFor('$full_wsi_path');\" class='pointer'>Add as layer.</a>";
                 }
 
-                $title_tags = "onclick=\"viewerConfig.withNewTab(false).go('".FM_USER_ID."', '$fname', '$full_wsi_path');\" class=\"pointer\"";
+                $title_tags = "onclick=\"viewerConfig.withNewTab(true).go('".FM_USER_ID."', '$fname', '$full_wsi_path');\" class=\"pointer\"";
                 $title_prefix = "$title_prefix<i class='xopat'>&#xe802;</i>";
 
+            } else if ($is_plain_image) {
+                $img = $is_link ? 'fa fa-file-text-o' : fm_get_file_icon_class($fname);
+                $img = "<i class=\"$img\"></i>&nbsp;";
+                $title_tags = "href=\"$filelink\" title=\"File info\"";
+                $onimageclick = "onclick=\"location.href = '$filelink';\"";
+
+                $actions.="<button onclick=\"viewerConfig.withNewTab(true).goPlain('".FM_USER_ID."', '$fname', '$file_full_url');\" class='pointer btn btn-sm'>Open in the viewer.</button>";
+
+                if (FM_ADVANCED_MODE) {
+                    $actions.="<a onclick=\"viewerConfig.setPlainImage('$file_full_url');\" class='pointer'>Add as background.</a>";
+                }
             } else {
                 $img = $is_link ? 'fa fa-file-text-o' : fm_get_file_icon_class($fname);
                 $img = "<i class=\"$img\"></i>&nbsp;";
@@ -644,7 +657,7 @@ EOF;
                 <?php endif; ?>
                 <td class="inline-actions">
                     <?php if ($is_tiff) {  ?>
-                        <a title="Open in Viewer" onclick="viewerConfig.withNewTab(false).go('<?php echo FM_USER_ID; ?>', '<?php echo $fname; ?>', '<?php echo $full_wsi_path; ?>');" class="pointer"><i class='xopat'>&#xe802;</i></a>
+                        <a title="Open in Viewer" onclick="viewerConfig.withNewTab(true).go('<?php echo FM_USER_ID; ?>', '<?php echo $fname; ?>', '<?php echo $full_wsi_path; ?>');" class="pointer"><i class='xopat'>&#xe802;</i></a>
                       <?php
 
                     } else if (FM_WSI_ANALYSIS_PAGE && strtolower($ext) === "mrxs") {
@@ -714,7 +727,7 @@ EOF;
             viewerUrl: '<?php echo FM_XOPAT_URL; ?>',
             containerId: '<?php echo FM_ADVANCED_MODE ? "viewer-configurator" : "" ?>',
             tiffPreviewMaker: dziImagePreviewMaker,
-            importerMetaEndpoint: '<?php echo FM_WSI_IMPORTER_API ? FM_WSI_IMPORTER_API : "undefined"; ?>',
+            importerMetaEndpoint: <?php echo FM_WSI_IMPORTER_API ? ("'" . FM_WSI_IMPORTER_API . "'") : "undefined"; ?>,
             urlRoot: '<?php echo $browser_relative_root ?>',
             data: `<?php echo $_POST['viewer-config'] ?? ''; ?>`,
         }, '<?php echo FM_XOPAT_SOURCES; ?>');
@@ -750,8 +763,9 @@ function fm_show_nav_path($path)
 {
     ?>
         <?php
-        echo '<div class="nav-item break-word float-left mr-3" style="width: 120px;">';
+        echo '<div class="nav-item break-word float-left mr-3 d-flex" style="width: 120px;">';
         include(_FM_ASSETS_PATH . 'rationai-color.svg');
+        if (FM_DEBUG) echo "<span style='width: 36px'>DEV</span>";
         echo '</div>';
 
         $path = fm_clean_path($path);

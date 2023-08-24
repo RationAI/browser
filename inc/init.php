@@ -7,10 +7,12 @@ if (!defined('PATH_TO_IS_MANAGER')) {
 }
 
 //for debug see what's going on
-set_exception_handler(function ($exception) {
-    echo "Uncaught exception: " , $exception->getMessage(), "\n";
-    var_dump($exception->getTraceAsString());
-});
+//if (FM_DEBUG) {
+    set_exception_handler(function ($exception) {
+        echo "Uncaught exception: " , $exception->getMessage(), "\n";
+        var_dump($exception->getTraceAsString());
+    });
+//}
 
 //custom configuration file
 if (!defined('FM_CONFIG') && is_file(PATH_TO_IS_MANAGER . 'config.php')) {
@@ -18,7 +20,7 @@ if (!defined('FM_CONFIG') && is_file(PATH_TO_IS_MANAGER . 'config.php')) {
 }
 
 require_once PATH_TO_IS_MANAGER . "inc/config.php";
-define('USES_DATABASE', (bool)XO_DB_ROOT);
+define('USES_DATABASE', boolval(XO_DB_ROOT));
 
 // Parse input data
 if (!count($_POST)) {

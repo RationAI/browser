@@ -1,11 +1,13 @@
 <?php
 define('VERSION', '0.1.1');
 
-//Default Image Server Preview URL Maker (for tif pyramid previews)
-//Default Image Server Preview URL Maker (for tif pyramid previews)
-$image_preview_url_maker = function ($file) {
-    return "";
-};
+if (!isset($image_preview_url_maker)) {
+    //Default Image Server Preview URL Maker (for tif pyramid previews)
+    //Default Image Server Preview URL Maker (for tif pyramid previews)
+    $image_preview_url_maker = function ($file) {
+        return "";
+    };
+}
 
 //Array of folders excluded from listing
 $GLOBALS['exclude_folders'] = array(
@@ -96,5 +98,5 @@ defined('_FM_ASSETS_PATH') || define('_FM_ASSETS_PATH', FM_URL . 'assets/');
 // where are js files to look for
 defined('_FM_JS_PATH') || define('_FM_JS_PATH', FM_URL . 'js/');
 
-define('XO_DB_ROOT', defined(FM_XO_DB_ROOT) ? (PATH_TO_IS_MANAGER . FM_XO_DB_ROOT) : false);
+define('XO_DB_ROOT', defined('FM_XO_DB_ROOT') && FM_XO_DB_ROOT ? (PATH_TO_IS_MANAGER . FM_XO_DB_ROOT) : false);
 

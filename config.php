@@ -3,9 +3,9 @@
 define('FM_DEBUG', false);
 define('FM_USE_AUTH', false);
 define('FM_ADVANCED_MODE', true);
-//define('FM_XO_DB_ROOT', "../xo_db/")
+//define('FM_XO_DB_ROOT', "../xo_db/");
 define('FM_XO_DB_ROOT', null);
-//define('FM_WSI_ANALYSIS_PAGE', "http://localhost:8081/importer/server/analysis.php");
+//define('FM_WSI_ANALYSIS_PAGE', "/importer/server/analysis.php");
 define('FM_WSI_ANALYSIS_PAGE', null);
 define('FM_BROWSE_ROOT', '/var/www/data/');
 define('FM_XOPAT_URL', "/xopat/index.php");
