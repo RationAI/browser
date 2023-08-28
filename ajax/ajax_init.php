@@ -2,9 +2,17 @@
 // Ajax API
 defined('PATH_TO_IS_MANAGER') or die('Invalid access!');
 
+function require_presence_any($var, $missing, ...$types) {
+    if (!isset($var) || !array_reduce($types,
+            function ($carry, $item) use ($var) {return $carry || gettype($var) === $item;}, false)) {
+        $types = implode(", ", $types);
+        send(400, "Invalid request: missing or invalid '$missing'! (any from [$types], got '$var')");
+    }
+}
+
 function require_presence($var, $type, $missing) {
     if (!isset($var) || gettype($var) !== $type) {
-        send(400, "Invalid request: missing or invalid '$missing'!");
+        send(400, "Invalid request: missing or invalid '$missing'! (type $type, got '$var')");
     }
 }
 

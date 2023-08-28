@@ -600,7 +600,18 @@ EOF;
 <a onclick=\"viewerConfig.setShaderFor('$full_wsi_path');\" class='pointer'>Add as layer.</a>";
                 }
 
-                $title_tags = "onclick=\"viewerConfig.withNewTab(true).go('".FM_USER_ID."', '$fname', '$full_wsi_path');\" class=\"pointer\"";
+                //add href too to enable visited link coloring, trick browser into thinking we visited HREF
+                $user = FM_USER_ID;
+                $title_tags = <<<EOF
+href="$full_wsi_path" class="pointer" onclick="
+event.preventDefault(); 
+if (history.replaceState) {
+    const current_url = window.location.href;
+    history.replaceState({},'','$full_wsi_path');
+    history.replaceState({},'',current_url);
+}
+viewerConfig.withNewTab(true).go('$user', '$fname', '$full_wsi_path');" 
+EOF;
                 $title_prefix = "$title_prefix<i class='xopat'>&#xe802;</i>";
 
             } else if ($is_plain_image) {

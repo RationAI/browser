@@ -301,6 +301,7 @@ class ViewerConfig {
     }
 
     go(user, title, image, ...dataArray) {
+        this._goInit();
         this.setPlainWSI(image);
         this._goFinish(user, title, ...dataArray);
     }

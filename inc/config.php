@@ -1,5 +1,5 @@
 <?php
-define('VERSION', '0.1.1');
+define('VERSION', '0.1.2');
 
 if (!isset($image_preview_url_maker)) {
     //Default Image Server Preview URL Maker (for tif pyramid previews)
