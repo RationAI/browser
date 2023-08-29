@@ -33,6 +33,12 @@ function fm_rdelete($path)
     }
     return false;
 }
+function fm_get_direct_file_url($filename, $relative_path=null) {
+    if ($relative_path !== null) {
+        $filename = $relative_path . '/' .$filename;
+    }
+    return FM_DIRECT_FILES_URL . fm_convert_win(fm_clean_path(FM_USER["root"]) . '/' . $filename);
+}
 
 function array_map_a(callable $cb, array $arr)
 {
@@ -222,7 +228,7 @@ function fm_file_lines($file) {
  */
 function fm_clean_path($path)
 {
-    $path = trim($path);
+    $path = $path ? trim($path) : "";
     $path = trim($path, '\\/');
     $path = str_replace(array('../', '..\\'), '', $path);
     if ($path == '..') {

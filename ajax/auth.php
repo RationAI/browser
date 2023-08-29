@@ -5,7 +5,7 @@ if (!defined('PATH_TO_IS_MANAGER')) {
 require_once PATH_TO_IS_MANAGER . 'ajax/ajax_init.php';
 //if we got here user already has rights to access, handled by ajax init
 
-if (!FM_USE_AUTH) {
+if (!_FM_USE_AUTH) {
     //todo create 'incognito' user to act as zero user if system works without auth 'requires ID for RW operations'
     send_ok();
 }

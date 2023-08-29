@@ -7,14 +7,20 @@ if (!defined('PATH_TO_IS_MANAGER')) {
 }
 
 //for debug see what's going on
-set_exception_handler(function ($exception) {
-    echo "Uncaught exception: " , $exception->getMessage(), "\n";
-});
+//if (FM_DEBUG) {
+    set_exception_handler(function ($exception) {
+        echo "Uncaught exception: " , $exception->getMessage(), "\n";
+        var_dump($exception->getTraceAsString());
+    });
+//}
 
 //custom configuration file
 if (!defined('FM_CONFIG') && is_file(PATH_TO_IS_MANAGER . 'config.php')) {
     define('FM_CONFIG', PATH_TO_IS_MANAGER . 'config.php');
 }
+
+require_once PATH_TO_IS_MANAGER . "inc/config.php";
+define('USES_DATABASE', boolval(XO_DB_ROOT));
 
 // Parse input data
 if (!count($_POST)) {
@@ -25,8 +31,6 @@ if (!count($_POST)) {
         $_POST = [];
     }
 }
-
-require_once PATH_TO_IS_MANAGER . "inc/config.php";
 
 // if fm included
 if (defined('FM_EMBED')) {
@@ -46,7 +50,8 @@ if (defined('FM_EMBED')) {
 
     session_cache_limiter('');
     session_name('filemanager');
-    define('_FM_USE_AUTH', true);
+
+    define('_FM_USE_AUTH', FM_USE_AUTH && USES_DATABASE);
 }
 session_start();
 
