@@ -556,11 +556,11 @@ EOF;
 
                 if (isset($file_meta_data[$fname])) {
                     $file_meta = $file_meta_data[$fname];
-                    if (!$file_meta["seen"]) {
-                        $row_class .= "not-yet-seen";
-                        $container_attrs = 'title="Not yet viewed" ';
-                        $status = "New file.";
-                    }
+//                    if (!$file_meta["seen"]) {
+//                        $row_class .= "not-yet-seen";
+//                        $container_attrs = 'title="Not yet viewed" ';
+//                        $status = "New file.";
+//                    }
                     if ($file_meta["session"]) {
                         $exports = rawurlencode($file_meta["session"]);
                         $actions .= "<a class='Label Label--primary label-btn' onclick='openHtmlExport(`$exports`, `".FM_XOPAT_URL."`)'> Open saved session. </a>";
