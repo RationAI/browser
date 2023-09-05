@@ -596,8 +596,8 @@ EOF;
 
 
                 if (FM_ADVANCED_MODE) {
-                    $actions.="<a onclick=\"viewerConfig.setPlainWSI('$full_wsi_path');\" class='pointer'>Add as background.</a>
-<a onclick=\"viewerConfig.setShaderFor('$full_wsi_path');\" class='pointer'>Add as layer.</a>";
+                    $actions.="<button type='button' class='pointer btn btn-sm' onclick=\"viewerConfig.setPlainWSI('$full_wsi_path');\" class='pointer'>+ as background</button>
+<button type='button' class='pointer btn btn-sm' onclick=\"viewerConfig.setShaderFor('$full_wsi_path');\" class='pointer'>+ as layer</button>";
                 }
 
                 //add href too to enable visited link coloring, trick browser into thinking we visited HREF
@@ -620,10 +620,11 @@ EOF;
                 $title_tags = "href=\"$filelink\" title=\"File info\"";
                 $onimageclick = "onclick=\"location.href = '$filelink';\"";
 
-                $actions.="<button onclick=\"viewerConfig.withNewTab(true).goPlain('".FM_USER_ID."', '$fname', '$file_full_url');\" class='pointer btn btn-sm'>Open in the viewer.</button>";
+                $actions.="<button type='button' onclick=\"viewerConfig.withNewTab(true).goPlain('".FM_USER_ID."', '$fname', '$file_full_url');\" class='pointer btn btn-sm'>Open in the viewer.</button>";
 
                 if (FM_ADVANCED_MODE) {
-                    $actions.="<a onclick=\"viewerConfig.setPlainImage('$file_full_url');\" class='pointer'>Add as background.</a>";
+                    $actions.="<button type='button' class='pointer btn btn-sm' onclick=\"viewerConfig.setPlainImage('$file_full_url');\" class='pointer'>+ as background</button>
+<button type='button' class='pointer btn btn-sm' onclick=\"viewerConfig.setPlainImageShaderFor('$file_full_url');\" class='pointer'>+ as layer</button>";
                 }
             } else {
                 $img = $is_link ? 'fa fa-file-text-o' : fm_get_file_icon_class($fname);
