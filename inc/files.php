@@ -556,11 +556,11 @@ EOF;
 
                 if (isset($file_meta_data[$fname])) {
                     $file_meta = $file_meta_data[$fname];
-                    if (!$file_meta["seen"]) {
-                        $row_class .= "not-yet-seen";
-                        $container_attrs = 'title="Not yet viewed" ';
-                        $status = "New file.";
-                    }
+//                    if (!$file_meta["seen"]) {
+//                        $row_class .= "not-yet-seen";
+//                        $container_attrs = 'title="Not yet viewed" ';
+//                        $status = "New file.";
+//                    }
                     if ($file_meta["session"]) {
                         $exports = rawurlencode($file_meta["session"]);
                         $actions .= "<a class='Label Label--primary label-btn' onclick='openHtmlExport(`$exports`, `".FM_XOPAT_URL."`)'> Open saved session. </a>";
@@ -596,11 +596,22 @@ EOF;
 
 
                 if (FM_ADVANCED_MODE) {
-                    $actions.="<a onclick=\"viewerConfig.setPlainWSI('$full_wsi_path');\" class='pointer'>Add as background.</a>
-<a onclick=\"viewerConfig.setShaderFor('$full_wsi_path');\" class='pointer'>Add as layer.</a>";
+                    $actions.="<button type='button' class='pointer btn btn-sm' onclick=\"viewerConfig.setPlainWSI('$full_wsi_path');\" class='pointer'>+ as background</button>
+<button type='button' class='pointer btn btn-sm' onclick=\"viewerConfig.setShaderFor('$full_wsi_path');\" class='pointer'>+ as layer</button>";
                 }
 
-                $title_tags = "onclick=\"viewerConfig.withNewTab(true).go('".FM_USER_ID."', '$fname', '$full_wsi_path');\" class=\"pointer\"";
+                //add href too to enable visited link coloring, trick browser into thinking we visited HREF
+                $user = FM_USER_ID;
+                $title_tags = <<<EOF
+href="$full_wsi_path" class="pointer" onclick="
+event.preventDefault(); 
+if (history.replaceState) {
+    const current_url = window.location.href;
+    history.replaceState({},'','$full_wsi_path');
+    history.replaceState({},'',current_url);
+}
+viewerConfig.withNewTab(true).go('$user', '$fname', '$full_wsi_path');" 
+EOF;
                 $title_prefix = "$title_prefix<i class='xopat'>&#xe802;</i>";
 
             } else if ($is_plain_image) {
@@ -609,10 +620,11 @@ EOF;
                 $title_tags = "href=\"$filelink\" title=\"File info\"";
                 $onimageclick = "onclick=\"location.href = '$filelink';\"";
 
-                $actions.="<button onclick=\"viewerConfig.withNewTab(true).goPlain('".FM_USER_ID."', '$fname', '$file_full_url');\" class='pointer btn btn-sm'>Open in the viewer.</button>";
+                $actions.="<button type='button' onclick=\"viewerConfig.withNewTab(true).goPlain('".FM_USER_ID."', '$fname', '$file_full_url');\" class='pointer btn btn-sm'>Open in the viewer.</button>";
 
                 if (FM_ADVANCED_MODE) {
-                    $actions.="<a onclick=\"viewerConfig.setPlainImage('$file_full_url');\" class='pointer'>Add as background.</a>";
+                    $actions.="<button type='button' class='pointer btn btn-sm' onclick=\"viewerConfig.setPlainImage('$file_full_url');\" class='pointer'>+ as background</button>
+<button type='button' class='pointer btn btn-sm' onclick=\"viewerConfig.setPlainImageShaderFor('$file_full_url');\" class='pointer'>+ as layer</button>";
                 }
             } else {
                 $img = $is_link ? 'fa fa-file-text-o' : fm_get_file_icon_class($fname);

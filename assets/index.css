@@ -464,6 +464,10 @@ input[type=checkbox] {
 /*    padding: 0px 7px;*/
 /*}*/
 
+a:visited {
+    color:  var(--color-mktg-btn-enterprise-bg-top);
+}
+
 .edit-file-actions > a, .edit-file-actions > button {
     padding: 5px 15px;
     cursor: pointer;
