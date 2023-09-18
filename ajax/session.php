@@ -22,13 +22,13 @@ try {
         } else {
             //save as file, relative to the directory of the slide (expects $ref_file) to contain the whole path
             $rel_path = pathinfo($ref_file, PATHINFO_DIRNAME);
+            $target_name = pathinfo($ref_file, PATHINFO_BASENAME) . ".ses.html";
             $write_target = FM_BROWSE_ROOT . $rel_path;
-            if (is_writable($write_target)) {
-                file_put_contents($write_target . "/session.html", $data);
+            if (is_writable($write_target) && file_safe_put_contents($write_target . "/$target_name", $data)) {
                 $rel_path = urlencode(substr($rel_path, 1)); //remove leading slash - 'nicer' link
-                $ret["url"] = FM_ROOT_URL . "?p=$rel_path&view=session.html";
+                $ret["url"] = FM_ROOT_URL . "?p=$rel_path&view=$target_name";
             } else {
-                error("Path not writeable!");
+                error("Path not writeable: $rel_path");
             }
         }
         send_ok($ret);

@@ -115,3 +115,12 @@ define('FM_SEARCH_QUERY', $s);
 defined('FM_TREEVIEW') || define('FM_TREEVIEW', false); //todo support?
 
 unset($p, $s, $use_highlightjs, $highlightjs_style);
+
+function file_safe_put_contents($filename, $data, $flags = 0, $context = null) {
+    $tmp_file = ".$filename~";
+    if (file_put_contents($tmp_file, $data, $flags, $context) === strlen($data)) {
+        return rename($tmp_file, $filename, $context);
+    }
+    @unlink($tmp_file, $context);
+    return false;
+}

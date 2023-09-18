@@ -26,7 +26,7 @@ function send_ok($data=[]) {
 }
 
 function error($msg) {
-    send_as_json(500, array(
+    send_as_json(502, array(
         "status" => "error",
         "message" => $msg,
     ));
@@ -40,7 +40,7 @@ function send($code, $data)
 }
 
 set_exception_handler(function (Throwable $exception) {
-    send(500, $exception->getMessage());
+    send(502, $exception->getMessage());
 });
 
 require_once PATH_TO_IS_MANAGER . 'inc/init.php';
