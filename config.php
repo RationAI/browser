@@ -12,4 +12,3 @@ $image_preview_url_maker = function ($file) {
     return "/iipsrv/iipsrv.fcgi?Deepzoom={$file}_files/1/0_0.jpg";
 };
 define('FM_IMAGE_SERVER_URL_PATH', FM_BROWSE_ROOT);
-define('FM_HTTP_PATH', FM_BROWSE_ROOT);
