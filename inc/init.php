@@ -77,13 +77,13 @@ if (!@is_dir($root_path)) {
     exit;
 }
 $image_server_root_url = fm_clean_path($rel_root_path);
-$root_url = fm_clean_path(FM_HTTP_PATH);
+$rel_path = fm_clean_path(FM_HTTP_PATH);
 
 // abs path for site
 defined('FM_SHOW_HIDDEN') || define('FM_SHOW_HIDDEN', FM_SHOW_HIDDEN_FILES);
 defined('FM_ROOT_PATH') || define('FM_ROOT_PATH', $root_path);
 defined('FM_WSI_SERVER_PATH') || define('FM_WSI_SERVER_PATH', $image_server_root_url);
-define('FM_ROOT_URL', ($is_https ? 'https' : 'http') . '://' . FM_HTTP_HOST . (!empty($root_url) ? '/' . $root_url : ''));
+define('FM_ROOT_URL', ($is_https ? 'https' : 'http') . '://' . FM_HTTP_HOST . (!empty($rel_path) ? '/' . $rel_path : ''));
 defined('FM_SELF_URL') || define('FM_SELF_URL', ($is_https ? 'https' : 'http') . '://' . FM_HTTP_HOST . $_SERVER['PHP_SELF']);
 
 // logout

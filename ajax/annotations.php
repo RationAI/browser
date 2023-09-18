@@ -57,55 +57,14 @@ function send_list_of_annotations_meta($param,
     send_as_json(200, $data);
 }
 
-//////////////////////////////////////////////////////////////////////////////////////////////
-//duplicated from mirax uploader -> move to xo_db?
-if (! function_exists('str_ends_with')) {
-    function str_ends_with(string $haystack, string $needle): bool
-    {
-        $needle_len = strlen($needle);
-        return ($needle_len === 0 || 0 === substr_compare($haystack, $needle, - $needle_len));
-    }
-}
-if (!function_exists('str_starts_with')) {
-    function str_starts_with($haystack, $needle) {
-        return (string)$needle !== '' && strncmp($haystack, $needle, strlen($needle)) === 0;
-    }
-}
-function mirax_path_from_db_record($record) {
-    $file = mirax_fname_from_tiff($record["name"]);
-    return file_path_from_year_biopsy(
-        pathinfo($file, PATHINFO_FILENAME), $record["root"], $record["biopsy"], true);
-}
-function mirax_fname_from_tiff($tiff) {
-    if (preg_match("/^(.*)\.tiff?$/i", $tiff, $match)) {
-        return $match[1];
-    }
-    if (str_ends_with($tiff, ".mrxs")) {
-        return $tiff;
-    }
-    throw new Exception("File is not a mirax file! $tiff");
-}
-function file_path_year($year) {
-    if (str_ends_with($year, "/")) return $year;
-    return "$year/";
+require_presence($protocol, "string", "protocol");
+
+function annotation_file_name($name) {
+    return preg_replace("/\s/", "_", $name) . ".json";
 }
 
-function file_path_biopsy($biopsy) {
-    if (is_string($biopsy)) $biopsy = intval(trim($biopsy));
-    $biopsy = str_pad($biopsy, 5, '0', STR_PAD_LEFT);
+require_once "_functions.php";
 
-    $prefix_len = 2; //suffix is last two digits
-    $prefix = substr($biopsy, 0, $prefix_len);
-    $suffix = substr($biopsy, $prefix_len);
-    return "$prefix/$suffix/";
-}
-function file_path_from_year_biopsy($filename_no_suffix, $year, $biopsy, $is_for_mirax) {
-    $yp = file_path_year($year);
-    $bp = file_path_biopsy($biopsy);
-
-    if ($is_for_mirax) return "$yp$bp$filename_no_suffix/";
-    else return "$yp$bp$filename_no_suffix/$filename_no_suffix/";
-}
 //////////////////////////////////////////////////////////////////////////////////////////////
 //dirty: should be in xo_db
 function xo_get_annotation_meta($id) {
@@ -119,11 +78,6 @@ function xo_get_annotation_meta($id) {
 }
 //////////////////////////////////////////////////////////////////////////////////////////////
 
-require_presence($protocol, "string", "protocol");
-
-function annotation_file_name($name) {
-    return preg_replace("/\s/", "_", $name) . ".json";
-}
 
 try {
     require_once XO_DB_ROOT . 'interfaces/annotations.php';
