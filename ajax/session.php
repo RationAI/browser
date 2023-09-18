@@ -21,7 +21,7 @@ try {
             xp_store_session(fm_tiff_fname_from_mirax(basename($ref_file)), FM_USER_ID, $data);
         } else {
             //save as file, relative to the directory of the slide (expects $ref_file) to contain the whole path
-            $rel_path = pathinfo($ref_file, PATHINFO_DIRNAME);
+            $rel_path = fm_clean_path(pathinfo($ref_file, PATHINFO_DIRNAME));
             $target_name = pathinfo($ref_file, PATHINFO_BASENAME) . ".ses.html";
             $write_target = FM_BROWSE_ROOT . $rel_path;
             if (is_writable($write_target) && file_safe_put_contents($write_target . "/$target_name", $data)) {

@@ -19,6 +19,34 @@ if (!defined('FM_CONFIG') && is_file(PATH_TO_IS_MANAGER . 'config.php')) {
     define('FM_CONFIG', PATH_TO_IS_MANAGER . 'config.php');
 }
 
+/**
+ * Safely write data
+ */
+function file_safe_put_contents($filename, $data, $flags = 0, $context = null) {
+    $tmp_file = ".$filename~";
+    if (file_put_contents($tmp_file, $data, $flags, $context) === strlen($data)) {
+        return rename($tmp_file, $filename, $context);
+    }
+    @unlink($tmp_file, $context);
+    return false;
+}
+
+/**
+ * Clean path
+ * @param string $path
+ * @return string
+ */
+function fm_clean_path($path)
+{
+    $path = $path ? trim($path) : "";
+    $path = trim($path, '\\/');
+    $path = str_replace(array('../', '..\\'), '', $path);
+    if ($path == '..') {
+        $path = '';
+    }
+    return str_replace('\\', '/', $path);
+}
+
 require_once PATH_TO_IS_MANAGER . "inc/config.php";
 define('USES_DATABASE', boolval(XO_DB_ROOT));
 
@@ -116,11 +144,3 @@ defined('FM_TREEVIEW') || define('FM_TREEVIEW', false); //todo support?
 
 unset($p, $s, $use_highlightjs, $highlightjs_style);
 
-function file_safe_put_contents($filename, $data, $flags = 0, $context = null) {
-    $tmp_file = ".$filename~";
-    if (file_put_contents($tmp_file, $data, $flags, $context) === strlen($data)) {
-        return rename($tmp_file, $filename, $context);
-    }
-    @unlink($tmp_file, $context);
-    return false;
-}
