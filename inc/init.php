@@ -6,14 +6,6 @@ if (!defined('PATH_TO_IS_MANAGER')) {
     die("Cannot include the file directly without providing PATH_TO_IS_MANAGER global variable with path to the browser repository root.");
 }
 
-//for debug see what's going on
-//if (FM_DEBUG) {
-    set_exception_handler(function ($exception) {
-        echo "Uncaught exception: " , $exception->getMessage(), "\n";
-        var_dump($exception->getTraceAsString());
-    });
-//}
-
 //custom configuration file
 if (!defined('FM_CONFIG') && is_file(PATH_TO_IS_MANAGER . 'config.php')) {
     define('FM_CONFIG', PATH_TO_IS_MANAGER . 'config.php');
@@ -23,7 +15,7 @@ if (!defined('FM_CONFIG') && is_file(PATH_TO_IS_MANAGER . 'config.php')) {
  * Safely write data
  */
 function file_safe_put_contents($filename, $data, $flags = 0, $context = null) {
-    $tmp_file = ".$filename~";
+    $tmp_file = ".~$filename";
     if (file_put_contents($tmp_file, $data, $flags, $context) === strlen($data)) {
         return rename($tmp_file, $filename, $context);
     }
@@ -36,8 +28,7 @@ function file_safe_put_contents($filename, $data, $flags = 0, $context = null) {
  * @param string $path
  * @return string
  */
-function fm_clean_path($path)
-{
+function fm_clean_path($path) {
     $path = $path ? trim($path) : "";
     $path = trim($path, '\\/');
     $path = str_replace(array('../', '..\\'), '', $path);
@@ -48,6 +39,14 @@ function fm_clean_path($path)
 }
 
 require_once PATH_TO_IS_MANAGER . "inc/config.php";
+//for debug see what's going on
+if (FM_DEBUG && defined("FM_AJAX")) {
+    set_exception_handler(function ($exception) {
+        echo "Uncaught exception: " , $exception->getMessage(), "\n";
+        var_dump($exception->getTraceAsString());
+    });
+}
+
 define('USES_DATABASE', boolval(XO_DB_ROOT));
 
 // Parse input data
