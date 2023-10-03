@@ -350,10 +350,16 @@ $all_files_size = 0;
     <?php
     if (FM_WSI_ANALYSIS_PAGE) {
         $url = FM_WSI_ANALYSIS_PAGE;
+        //todo dirty:
+        $conv_url = dirname(FM_WSI_ANALYSIS_PAGE) . "/conversion.php";
 echo <<<EOF
 <!--ANALYSIS FORM-->
     <form action="$url" method="post" id="analysis-form" enctype="multipart/form-data">
         <input type="hidden" class="form-control" name="" value=""/>
+        <input type="hidden" class="form-control" name="" value=""/>
+    </form>
+<!--CONVERSION FORM-->
+<form action="$conv_url" method="post" id="conversion-form" enctype="multipart/form-data">
         <input type="hidden" class="form-control" name="" value=""/>
     </form>
 EOF;
@@ -679,6 +685,10 @@ let form = document.getElementById('analysis-form'); form.children[0].setAttribu
 //todo flexible selection of algorithm
 form.children[1].setAttribute('name', 'algorithm'); form.children[1].setAttribute('value', JSON.stringify({name:'prostate-prediction'}));   
                         " name="command" value="Run analysis" class="form-control"/>
+EOF;
+                        echo <<<EOF
+                        <input type="submit" form="conversion-form" style="cursor: pointer" id="send-one-file-conversion" onclick="
+let form = document.getElementById('conversion-form'); form.children[0].setAttribute('name', 'file'); form.children[0].setAttribute('value', '$fname');" name="command" value="Convert" class="form-control"/>
 EOF;
                     }  else { ?>
                         <!--todo we do not support direct links  <a title="Direct link" href="--><?php //echo fm_enc($wsi_dirpath) ?><!--" target="_blank"><i class="fa fa-link"></i></a>-->
