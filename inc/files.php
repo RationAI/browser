@@ -350,10 +350,16 @@ $all_files_size = 0;
     <?php
     if (FM_WSI_ANALYSIS_PAGE) {
         $url = FM_WSI_ANALYSIS_PAGE;
+        //todo dirty:
+        $conv_url = dirname(FM_WSI_ANALYSIS_PAGE) . "/conversion.php";
 echo <<<EOF
 <!--ANALYSIS FORM-->
     <form action="$url" method="post" id="analysis-form" enctype="multipart/form-data">
         <input type="hidden" class="form-control" name="" value=""/>
+        <input type="hidden" class="form-control" name="" value=""/>
+    </form>
+<!--CONVERSION FORM-->
+<form action="$conv_url" method="post" id="conversion-form" enctype="multipart/form-data">
         <input type="hidden" class="form-control" name="" value=""/>
     </form>
 EOF;
@@ -596,8 +602,8 @@ EOF;
 
 
                 if (FM_ADVANCED_MODE) {
-                    $actions.="<a onclick=\"viewerConfig.setPlainWSI('$full_wsi_path');\" class='pointer'>Add as background.</a>
-<a onclick=\"viewerConfig.setShaderFor('$full_wsi_path');\" class='pointer'>Add as layer.</a>";
+                    $actions.="<button type='button' class='pointer btn btn-sm' onclick=\"viewerConfig.setPlainWSI('$full_wsi_path');\" class='pointer'>+ as background</button>
+<button type='button' class='pointer btn btn-sm' onclick=\"viewerConfig.setShaderFor('$full_wsi_path');\" class='pointer'>+ as layer</button>";
                 }
 
                 //add href too to enable visited link coloring, trick browser into thinking we visited HREF
@@ -620,10 +626,11 @@ EOF;
                 $title_tags = "href=\"$filelink\" title=\"File info\"";
                 $onimageclick = "onclick=\"location.href = '$filelink';\"";
 
-                $actions.="<button onclick=\"viewerConfig.withNewTab(true).goPlain('".FM_USER_ID."', '$fname', '$file_full_url');\" class='pointer btn btn-sm'>Open in the viewer.</button>";
+                $actions.="<button type='button' onclick=\"viewerConfig.withNewTab(true).goPlain('".FM_USER_ID."', '$fname', '$file_full_url');\" class='pointer btn btn-sm'>Open in the viewer.</button>";
 
                 if (FM_ADVANCED_MODE) {
-                    $actions.="<a onclick=\"viewerConfig.setPlainImage('$file_full_url');\" class='pointer'>Add as background.</a>";
+                    $actions.="<button type='button' class='pointer btn btn-sm' onclick=\"viewerConfig.setPlainImage('$file_full_url');\" class='pointer'>+ as background</button>
+<button type='button' class='pointer btn btn-sm' onclick=\"viewerConfig.setPlainImageShaderFor('$file_full_url');\" class='pointer'>+ as layer</button>";
                 }
             } else {
                 $img = $is_link ? 'fa fa-file-text-o' : fm_get_file_icon_class($fname);
@@ -678,6 +685,10 @@ let form = document.getElementById('analysis-form'); form.children[0].setAttribu
 //todo flexible selection of algorithm
 form.children[1].setAttribute('name', 'algorithm'); form.children[1].setAttribute('value', JSON.stringify({name:'prostate-prediction'}));   
                         " name="command" value="Run analysis" class="form-control"/>
+EOF;
+                        echo <<<EOF
+                        <input type="submit" form="conversion-form" style="cursor: pointer" id="send-one-file-conversion" onclick="
+let form = document.getElementById('conversion-form'); form.children[0].setAttribute('name', 'file'); form.children[0].setAttribute('value', '$fname');" name="command" value="Convert" class="form-control"/>
 EOF;
                     }  else { ?>
                         <!--todo we do not support direct links  <a title="Direct link" href="--><?php //echo fm_enc($wsi_dirpath) ?><!--" target="_blank"><i class="fa fa-link"></i></a>-->

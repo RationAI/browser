@@ -59,7 +59,7 @@ defined('FM_ADVANCED_MODE') || define('FM_ADVANCED_MODE', false);
 //translate one url to the other (e.g. using htaccess at SERVER/proxy) and
 //files directory with htaccess redirect from front end to root path
 // example: RewriteRule $path/to/proxy/(.*)^ /real/absolute/server/url/$1 [L, QSA]
-defined('FM_HTTP_PATH') || define('FM_HTTP_PATH', FM_BROWSE_ROOT);
+defined('FM_HTTP_PATH') || define('FM_HTTP_PATH', '/');
 
 // Root url for the source files, by default relative, the domain is appended automatically (JS, assets)
 defined('FM_URL') || define('FM_URL', PATH_TO_IS_MANAGER ?? '');
@@ -100,3 +100,15 @@ defined('_FM_JS_PATH') || define('_FM_JS_PATH', FM_URL . 'js/');
 
 define('XO_DB_ROOT', defined('FM_XO_DB_ROOT') && FM_XO_DB_ROOT ? (PATH_TO_IS_MANAGER . FM_XO_DB_ROOT) : false);
 
+if (! function_exists('str_ends_with')) {
+    function str_ends_with(string $haystack, string $needle): bool
+    {
+        $needle_len = strlen($needle);
+        return ($needle_len === 0 || 0 === substr_compare($haystack, $needle, - $needle_len));
+    }
+}
+if (! function_exists('str_starts_with')) {
+    function str_starts_with($haystack, $needle) {
+        return (string)$needle !== '' && strncmp($haystack, $needle, strlen($needle)) === 0;
+    }
+}

@@ -219,23 +219,7 @@ function fm_file_lines($file) {
     while (($line = fgets($file)) !== false) yield $line;
     fclose($file);
 }
-;
 
-/**
- * Clean path
- * @param string $path
- * @return string
- */
-function fm_clean_path($path)
-{
-    $path = $path ? trim($path) : "";
-    $path = trim($path, '\\/');
-    $path = str_replace(array('../', '..\\'), '', $path);
-    if ($path == '..') {
-        $path = '';
-    }
-    return str_replace('\\', '/', $path);
-}
 
 /**
  * Get parent path

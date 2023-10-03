@@ -1,6 +1,7 @@
 <?php
 // Ajax API
 defined('PATH_TO_IS_MANAGER') or die('Invalid access!');
+define("FM_AJAX", true);
 
 function require_presence_any($var, $missing, ...$types) {
     if (!isset($var) || !array_reduce($types,
@@ -26,7 +27,7 @@ function send_ok($data=[]) {
 }
 
 function error($msg) {
-    send_as_json(500, array(
+    send_as_json(502, array(
         "status" => "error",
         "message" => $msg,
     ));
@@ -38,10 +39,6 @@ function send($code, $data)
     http_response_code($code);
     exit;
 }
-
-set_exception_handler(function (Throwable $exception) {
-    send(500, $exception->getMessage());
-});
 
 require_once PATH_TO_IS_MANAGER . 'inc/init.php';
 //db proxy
