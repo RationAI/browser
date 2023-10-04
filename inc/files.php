@@ -583,6 +583,7 @@ EOF;
                         if ($event === "mirax-importer") {
                             if ($file_meta["event_data"][$i] === "processing-finished") {
                                 $generated = true;
+                                $status = '';
                             } else if ($file_meta["event_data"][$i] === "failed") {
                                 $status = "Not Available!";
                                 $generated = true;
