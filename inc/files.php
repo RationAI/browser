@@ -357,6 +357,7 @@ echo <<<EOF
     <form action="$url" method="post" id="analysis-form" enctype="multipart/form-data">
         <input type="hidden" class="form-control" name="" value=""/>
         <input type="hidden" class="form-control" name="" value=""/>
+        <input type="hidden" class="form-control" name="" value=""/>
     </form>
 <!--CONVERSION FORM-->
 <form action="$conv_url" method="post" id="conversion-form" enctype="multipart/form-data">
@@ -495,16 +496,16 @@ EOF;
 
                     <?php
 
-                    //todo analysis not really possible biopsy unknown
-//                    if (FM_WSI_ANALYSIS_PAGE && (FM_PATH == "" || FM_PATH == "/")) {
-//                        echo <<<EOF
-//                        <input type="submit" form="analysis-form" style="cursor: pointer" id="send-one-file-analysis" onclick="
-//let form = document.getElementById('analysis-form'); form.children[0].setAttribute('name', 'biopsy'); form.children[0].setAttribute('value', '$f');
-////todo flexible selection of algorithms
-//form.children[1].setAttribute('name', 'algorithm'); form.children[1].setAttribute('value', JSON.stringify({name:'prostate-prediction'}));
-//                        " name="command" value="Run analysis" class="form-control"/>
-//EOF;
-//                    }
+                    if (FM_WSI_ANALYSIS_PAGE && strlen($rel_dirpath) < (5+4+3)+5 && preg_match("/^(.*?([0-9]{4})[_-]([0-9]+).*)$/i", $f, $matches, PREG_UNMATCHED_AS_NULL)) {
+                        echo <<<EOF
+                        <input type="submit" form="analysis-form" style="cursor: pointer" id="send-one-file-analysis" onclick="
+let form = document.getElementById('analysis-form'); 
+form.children[0].setAttribute('name', 'biopsy'); form.children[0].setAttribute('value', '$matches[3]');
+form.children[1].setAttribute('name', 'algorithm'); form.children[1].setAttribute('value', JSON.stringify({name:'prostate-prediction'}));
+form.children[2].setAttribute('name', 'year'); form.children[2].setAttribute('value', '$matches[2]');
+                        " name="command" value="Run analysis" class="form-control"/>
+EOF;
+                    }
                     ?>
                 </td>
             </tr>
