@@ -4,7 +4,7 @@ define('FM_USE_AUTH', false);
 define('FM_ADVANCED_MODE', true);
 define('FM_XO_DB_ROOT', null); //disabled
 define('FM_WSI_ANALYSIS_PAGE', null); //disabled
-define('FM_BROWSE_ROOT', '/var/www/data/');
+define('FM_BROWSE_ROOT', '/mnt/data/');
 define('FM_XOPAT_URL', "/xopat/index.php");
 define('FM_XOPAT_SOURCES', '/xopat/user_setup.php');
 
