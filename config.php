@@ -13,7 +13,7 @@ define('FM_XO_DB_ROOT', "../xo_db/");
 //define('FM_XO_DB_ROOT', null);
 define('FM_WSI_ANALYSIS_PAGE', _read_env_browser("XO_BROWSER_ANALYSIS", "/importer/server/analysis.php"));
 //define('FM_WSI_ANALYSIS_PAGE', null);
-define('FM_BROWSE_ROOT', '/var/www/data/');
+define('FM_BROWSE_ROOT', _read_env_browser("XO_FILES_MOUNT", "/var/www/data/"));
 define('FM_XOPAT_URL', "/xopat/index.php");
 define('FM_XOPAT_SOURCES', '/xopat/user_setup.php');
 
