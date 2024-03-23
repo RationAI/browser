@@ -29,7 +29,7 @@ if (_FM_USE_AUTH) {
         //notify on login
         global $path_prefix;
         fm_set_msg($type === "login" ? 'You are logged in' : 'Successfully registered!');
-        fm_redirect("/". $path_prefix); //todo remove ?p= arg and attach other: '?' . $_SERVER['QUERY_STRING']
+        header("Refresh:0");
     }, function ($type, $e) {
         //notify on fail
         global $path_prefix;
