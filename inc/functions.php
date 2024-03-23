@@ -220,6 +220,54 @@ function fm_file_lines($file) {
     fclose($file);
 }
 
+function fm_download($file, $path_prefix) {
+    $dl = fm_clean_path($file);
+    $dl = str_replace('/', '', $file);
+    $path = FM_ROOT_PATH;
+    if (FM_PATH != '') {
+        $path .= '/' . FM_PATH;
+    }
+    if ($dl != '' && is_file($path . '/' . $file)) {
+        header('Content-Description: File Transfer');
+        header('Content-Type: application/octet-stream');
+        header('Content-Disposition: attachment; filename="' . basename($path . '/' . $file) . '"');
+        header('Content-Transfer-Encoding: binary');
+        header('Connection: Keep-Alive');
+        header('Expires: 0');
+        header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
+        header('Pragma: public');
+        header('Content-Length: ' . filesize($path . '/' . $file));
+        readfile($path . '/' . $file);
+        exit;
+    } else {
+        fm_set_msg('File not found', 'error');
+        fm_redirect("/" . $path_prefix . $path);
+    }
+}
+
+function fm_delete($file, $path_prefix) {
+    if (isset($_POST['token']) && !FM_READONLY) {
+        $del = str_replace( '/', '', fm_clean_path( $file ) );
+        if ($del != '' && $del != '..' && $del != '.' && verifyToken($_POST['token'])) {
+            $path = FM_ROOT_PATH;
+            if (FM_PATH != '') {
+                $path .= '/' . FM_PATH;
+            }
+            $is_dir = is_dir($path . '/' . $del);
+            if (fm_rdelete($path . '/' . $del)) {
+                $msg = $is_dir ? 'Folder <b>%s</b> deleted' : 'File <b>%s</b> deleted';
+                fm_set_msg(sprintf($msg, fm_enc($del)));
+            } else {
+                $msg = $is_dir ? 'Folder <b>%s</b> not deleted' : 'File <b>%s</b> not deleted';
+                fm_set_msg(sprintf($msg, fm_enc($del)), 'error');
+            }
+        } else {
+            fm_set_msg('Invalid file or folder name', 'error');
+        }
+        $FM_PATH=FM_PATH;fm_redirect("/" . $path_prefix . $FM_PATH);
+    }
+}
+
 
 /**
  * Get parent path

@@ -1,0 +1,36 @@
+DirectorySlash Off
+DirectoryIndex index.php
+RewriteEngine On
+
+RewriteRule ^$ /authorized/cases/path/ [L,QSA]
+
+#Respects prefix: $path_prefix = "authorized/cases/path/";
+RewriteCond %{REQUEST_URI} !^/?index\.php$ [NC]
+RewriteCond %{REQUEST_URI} ^/?authorized/cases/path.*$ [NC]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+# If RewriteCond's match, skip the next RewriteRule.
+RewriteRule ^ - [skip=1]
+# Otherwise, skip all.
+RewriteRule ^ - [skip=5]
+# directory and file
+RewriteRule ^authorized/cases/path/(([^/\.]+/)+)([^/]+.[^/]+)$ /index.php?p=$1&view=$3 [L,QSA]
+# directory tree
+RewriteRule ^authorized/cases/path/(([^/\.]+/)+)$ /index.php?p=$1 [L,QSA]
+# single file
+RewriteRule ^authorized/cases/path/([^/]+.[^/]+)$ /index.php?p=&view=$1 [L,QSA]
+# root
+RewriteRule ^authorized/cases/path/?$ /index.php?p= [L,QSA]
+RewriteRule ^authorized/cases/path/(.+)$ /index.php?$1 [L,QSA]
+
+# Allows specific URLs, we allow 'health'
+<If "%{THE_REQUEST} =~ m#^GET /health/#">
+    Allow from All
+    Satisfy Any
+
+    #We just return HTTP200
+    ErrorDocument 200 "health"
+    RewriteEngine On
+    RewriteRule .* - [R=200]
+</If>
+

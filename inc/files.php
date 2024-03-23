@@ -1,7 +1,10 @@
 <?php
+
+global $path_prefix;
+
 // always use ?p=
 if (!isset($_GET['p'])) {
-    fm_redirect(FM_SELF_URL . '?p=');
+    fm_redirect("/" . $path_prefix);
 }
 
 // Show image here
@@ -24,16 +27,18 @@ if (_FM_USE_AUTH) {
         //do nothing on logged
     }, function ($type) {
         //notify on login
+        global $path_prefix;
         fm_set_msg($type === "login" ? 'You are logged in' : 'Successfully registered!');
-        fm_redirect(FM_SELF_URL . '?' . $_SERVER['QUERY_STRING']);
+        fm_redirect("/". $path_prefix); //todo remove ?p= arg and attach other: '?' . $_SERVER['QUERY_STRING']
     }, function ($type, $e) {
         //notify on fail
+        global $path_prefix;
         if ($type === "login") {
             fm_set_msg('Invalid Username / Password', 'error');
-            fm_redirect(FM_SELF_URL);
+            fm_redirect("/". $path_prefix);
         }
         fm_set_msg('Unable to register: name or email already taken.', 'error', $e->getMessage());
-        fm_redirect(FM_SELF_URL);
+        fm_redirect("/". $path_prefix);
     });
 }
 
@@ -42,50 +47,11 @@ if (_FM_USE_AUTH) {
 
 // Download
 if (isset($_GET['dl'])) {
-    $dl = $_GET['dl'];
-    $dl = fm_clean_path($dl);
-    $dl = str_replace('/', '', $dl);
-    $path = FM_ROOT_PATH;
-    if (FM_PATH != '') {
-        $path .= '/' . FM_PATH;
-    }
-    if ($dl != '' && is_file($path . '/' . $dl)) {
-        header('Content-Description: File Transfer');
-        header('Content-Type: application/octet-stream');
-        header('Content-Disposition: attachment; filename="' . basename($path . '/' . $dl) . '"');
-        header('Content-Transfer-Encoding: binary');
-        header('Connection: Keep-Alive');
-        header('Expires: 0');
-        header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
-        header('Pragma: public');
-        header('Content-Length: ' . filesize($path . '/' . $dl));
-        readfile($path . '/' . $dl);
-        exit;
-    } else {
-        fm_set_msg('File not found', 'error');
-        fm_redirect(FM_SELF_URL . '?p=' . urlencode(FM_PATH));
-    }
+    fm_download($_GET['dl'], $path_prefix);
 }
 
-if (isset($_GET['del'], $_POST['token']) && !FM_READONLY) {
-    $del = str_replace( '/', '', fm_clean_path( $_GET['del'] ) );
-    if ($del != '' && $del != '..' && $del != '.' && verifyToken($_POST['token'])) {
-        $path = FM_ROOT_PATH;
-        if (FM_PATH != '') {
-            $path .= '/' . FM_PATH;
-        }
-        $is_dir = is_dir($path . '/' . $del);
-        if (fm_rdelete($path . '/' . $del)) {
-            $msg = $is_dir ? 'Folder <b>%s</b> deleted' : 'File <b>%s</b> deleted';
-            fm_set_msg(sprintf($msg, fm_enc($del)));
-        } else {
-            $msg = $is_dir ? 'Folder <b>%s</b> not deleted' : 'File <b>%s</b> not deleted';
-            fm_set_msg(sprintf($msg, fm_enc($del)), 'error');
-        }
-    } else {
-        fm_set_msg('Invalid file or folder name', 'error');
-    }
-    $FM_PATH=FM_PATH;fm_redirect(FM_SELF_URL . '?p=' . urlencode($FM_PATH));
+if (isset($_GET['del'])) {
+    fm_delete($_GET['del'], $path_prefix);
 }
 
 /*************************** /ACTIONS ***************************/
@@ -101,7 +67,7 @@ if (FM_PATH != '') {
 
 // check path
 if (!is_dir($path)) {
-    fm_redirect(FM_SELF_URL . '?p=');
+    fm_redirect("/" . $path_prefix);
 }
 
 // get parent folder
@@ -111,6 +77,13 @@ $show_file_details = FM_ADVANCED_MODE && !FM_IS_WIN;
 // file viewer
 if (isset($_GET['view'])) {
     $file = $_GET['view'];
+
+    if (isset($_GET["download"])) {
+        fm_download($file, $path_prefix);
+    } else if (isset($_GET["delete"])) {
+        fm_delete($file, $path_prefix);
+    }
+
     $file = fm_clean_path($file);
 
 
@@ -119,7 +92,7 @@ if (isset($_GET['view'])) {
 
     if ($file == '' || !is_file($path . '/' . $file)) {
         fm_set_msg('File not found', 'error');
-        fm_redirect(FM_SELF_URL . '?p=' . urlencode(FM_PATH));
+        fm_redirect("/" . $path_prefix . FM_PATH);
     }
 
 
@@ -216,9 +189,9 @@ if (isset($_GET['view'])) {
             ?>
         </p>
         <p>
-            <b><a class="btn-outline-primary btn-sm btn" href="?p=<?php echo urlencode(FM_PATH) ?>&amp;dl=<?php echo urlencode($file) ?>"><i class="fa fa-cloud-download"></i> Download</a></b> &nbsp;
+            <b><a class="btn-outline-primary btn-sm btn" href="/<?php echo $path_prefix . FM_PATH ?>/<?php echo $file ?>?download"><i class="fa fa-cloud-download"></i> Download</a></b> &nbsp;
 <!--  TODO open disabled - exact and front links might differ          <b><a class="btn-outline-primary btn-sm btn" href="--><?php //echo fm_enc($file_url) ?><!--" target="_blank"><i class="fa fa-external-link-square"></i> Open</a></b> &nbsp;-->
-            <b><a class="btn-outline-primary btn-sm btn" href="?p=<?php echo urlencode(FM_PATH) ?>"><i class="fa fa-chevron-circle-left"></i> Back</a></b>
+            <b><a class="btn-outline-primary btn-sm btn" href="/<?php echo $path_prefix . FM_PATH ?>/"><i class="fa fa-chevron-circle-left"></i> Back</a></b>
         </p>
         <?php
         if ($is_image) {
@@ -429,12 +402,12 @@ EOF;
             ?>
             <tr>
 <!--                --><?php //if (!FM_READONLY): ?><!--<td></td>--><?php //endif; ?>
-                <td colspan="<?php echo !FM_IS_WIN ? '6' : '4' ?>"><a href="?p=<?php echo urlencode($parent) ?>"><i class="fa fa-chevron-circle-left"></i> ..</a></td></tr>
+                <td colspan="<?php echo !FM_IS_WIN ? '6' : '4' ?>"><a href="/<?php echo $path_prefix . ($parent ? "$parent/" : "") ?>"><i class="fa fa-chevron-circle-left"></i> ..</a></td></tr>
             <?php
         }
 
         //todo does not work if constant uses absolute path or '.././.' syntax
-        $browser_relative_root = PATH_TO_IS_MANAGER;
+        $browser_relative_root = FM_URL;
 
         foreach ($folders as $folder_data) {
             $f = $folder_data[0];
@@ -474,7 +447,7 @@ EOF;
 <!--                    </td>-->
 <!--                --><?php //endif; ?>
                 <td>
-                    <div class="filename"><a href="?p=<?php echo urlencode(trim($full_rel_path, '/')) ?>"><i
+                    <div class="filename"><a href="/<?php echo $path_prefix . trim($full_rel_path, '/') ?>/"><i
                                 class="<?php echo $img ?>"></i> <?php echo $position_relative_path_display . fm_convert_win($f) ?>
                         </a><?php echo($is_link ? ' &rarr; <i>' . readlink($full_path) . '</i>' : '') ?></div>
                 </td>
@@ -487,7 +460,7 @@ EOF;
                     <td><?php echo $owner['name'] . ':' . $group['name'] ?></td>
                 <?php endif; ?>
                 <td class="inline-actions"><?php if (!FM_READONLY && $rel_dirpath != ""): ?>
-                        <a title="Delete" class="pointer" onclick="fireForm(event, '?p=<?php echo urlencode($rel_dirpath) ?>&amp;del=<?php echo urlencode($f) ?>', 'Really delete folder <?php echo $f ?>');">
+                        <a title="Delete" class="pointer" onclick="fireForm(event, '/<?php echo $path_prefix . $rel_dirpath ?>/<?php echo $f ?>?delete', 'Really delete folder <?php echo $f ?>');">
                             <i class="fa fa-trash-o" aria-hidden="true"></i></a>
                      <?php endif; ?>
 <!--                    <a title="Direct link"-->
@@ -536,7 +509,7 @@ EOF;
             $filesize_raw = filesize($full_path);
             $filesize = fm_get_filesize($filesize_raw);
             $file_full_url = fm_get_direct_file_url($full_rel_path);
-            $filelink = '?p=' . urlencode($rel_dirpath) . '&amp;view=' . urlencode($fname);
+            $filelink = "/" . $path_prefix . $rel_dirpath . "/" . $fname;
             $all_files_size += $filesize_raw;
             $img = $title_tags = $onimageclick = "";
 
@@ -694,7 +667,7 @@ let form = document.getElementById('conversion-form'); form.children[0].setAttri
 EOF;
                     }  else { ?>
                         <!--todo we do not support direct links  <a title="Direct link" href="--><?php //echo fm_enc($wsi_dirpath) ?><!--" target="_blank"><i class="fa fa-link"></i></a>-->
-                        <a title="Download" href="?p=<?php echo urlencode($wsi_dirpath) ?>&amp;dl=<?php echo urlencode($fname) ?>"><i class="fa fa-download"></i></a>
+                        <a title="Download" href="/<?php echo $path_prefix . $wsi_dirpath ?>/<?php echo $fname ?>?download"><i class="fa fa-download"></i></a>
                     <?php } ?>
                 </td>
             </tr>
@@ -783,17 +756,15 @@ function fm_show_search_bar() {
  * Show nav block
  * @param string $path
  */
-function fm_show_nav_path($path)
-{
-    ?>
-        <?php
+function fm_show_nav_path($path) {
+    global $path_prefix;
         echo '<div class="nav-item break-word float-left mr-3 d-flex" style="width: 120px;">';
-        include(_FM_ASSETS_PATH . 'rationai-color.svg');
+        include(PATH_TO_IS_MANAGER . 'assets/rationai-color.svg');
         if (FM_DEBUG) echo "<span style='width: 36px'>DEV</span>";
         echo '</div>';
 
         $path = fm_clean_path($path);
-        $root_url = "<a href='?p=' style='vertical-align: middle'><i class='fa fa-home' aria-hidden='true' title='" . FM_PATH . "'></i></a>";
+        $root_url = "<a href='/$path_prefix' style='vertical-align: middle'><i class='fa fa-home' aria-hidden='true' title='" . FM_PATH . "'></i></a>";
         $sep = '<i class="fa fa-caret-right text-secondary"></i>';
         if ($path != '') {
             $exploded = explode('/', $path);
@@ -802,8 +773,7 @@ function fm_show_nav_path($path)
             $parent = '';
             for ($i = 0; $i < $count; $i++) {
                 $parent = trim($parent . '/' . $exploded[$i], '/');
-                $parent_enc = urlencode($parent);
-                $array[] = "<a href='?p={$parent_enc}'>" . fm_enc(fm_convert_win($exploded[$i])) . "</a>";
+                $array[] = "<a href='/$path_prefix/$parent/'>" . fm_enc(fm_convert_win($exploded[$i])) . "</a>";
             }
             $root_url .= $sep . implode($sep, $array);
         }
@@ -947,6 +917,7 @@ header("Pragma: no-cache");
      */
     function fm_show_footer()
     {
+    global $path_prefix;
         ?>
 </div>
 <script>
@@ -1012,9 +983,9 @@ header("Pragma: no-cache");
             if (n.length >= 2) {
                 var e = getSearchResult(t, n), a = "", o = "";
                 e.folders.forEach(function (e) {
-                    a += '<li class="' + e.type + '"><a href="?p=' + e.path + '">' + e.name + "</a></li>"
+                    a += '<li class="' + e.type + '"><a href="/<?php echo $path_prefix ?>' + e.path + '/">' + e.name + "</a></li>"
                 }), e.files.forEach(function (e) {
-                    o += '<li class="' + e.type + '"><a href="?p=' + e.path + "&view=" + e.name + '">' + e.name + "</a></li>"
+                    o += '<li class="' + e.type + '"><a href="/<?php echo $path_prefix ?>' + e.path + "/" + e.name + '">' + e.name + "</a></li>"
                 }), document.getElementById("searchresultWrapper").innerHTML = '<div class="model-wrapper">'+a+o+"</div>"
             }
         }, 500)

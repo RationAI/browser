@@ -11,6 +11,9 @@ if (!defined('FM_CONFIG') && is_file(PATH_TO_IS_MANAGER . 'config.php')) {
     define('FM_CONFIG', PATH_TO_IS_MANAGER . 'config.php');
 }
 
+global $path_prefix;
+$path_prefix = "authorized/cases/path/";
+
 /**
  * Safely write data
  */
@@ -117,7 +120,7 @@ defined('FM_SELF_URL') || define('FM_SELF_URL', ($is_https ? 'https' : 'http') .
 if (isset($_GET['logout'])) {
     unset($_SESSION['logged']);
     unset($_SESSION['token']);
-    fm_redirect(FM_SELF_URL);
+    fm_redirect("/" . $path_prefix);
 }
 
 
