@@ -29,9 +29,10 @@ function finish($success, $type) {
 <?php
     } else {
         //notify on fail
+        global $path_prefix;
         if ($type === "login") fm_set_msg('Invalid Username / Password', 'error');
         else fm_set_msg('Unable to register: name or email already taken.', 'error');
-        fm_redirect(FM_SELF_URL);
+        fm_redirect("/" . $path_prefix);
     }
 };
 

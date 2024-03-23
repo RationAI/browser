@@ -648,7 +648,7 @@ background: linear-gradient(0deg, var(--color-bg-primary) 0%, transparent 100%);
         newElem.classList.add('banner-container', 'position-relative');
         newElem.dataset.path = dataPath;
         newElem.innerHTML = `
-<span class="material-icons position-absolute left-0 pointer top-0" onclick="${this.props.windowName}._unsetLayer(this) && this.remove();">close</span>
+<span class="material-icons position-absolute left-0 pointer top-0" onclick="${this.props.windowName}._unsetLayer(this.parentElement.dataset.path) && this.remove();">close</span>
 <img class="banner-image" src="${imageUrl}">
 <h4 class="position-absolute bottom-0 f4-light mx-3 my-2 no-wrap overflow-hidden">${filename}</h4>
 <select class="viewer-config-shader-select position-absolute top-4 right-0" id="viewer-config-shader-select-${uid}"
