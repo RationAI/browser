@@ -619,11 +619,14 @@ if (history.replaceState) {
 viewerConfig.withNewTab(true).go('$user', '$fname', '$full_wsi_path');" 
 EOF;
                 $title_prefix = "$title_prefix<i class='xopat'>&#xe802;</i>";
-            } else if (in_array($extension, array("bif", "dcm", "isyntax", "mrxs", "ndpi", "btf", "tf2", "tf8", "scn", "svs", "tif", "tiff", "czi", "vsf"))) {
-                $img = $image_preview_url_maker_empaia($full_wsi_path);
+            } else if (in_array($ext, array("bif", "dcm", "isyntax", "mrxs", "ndpi", "btf", "tf2", "tf8", "scn", "svs", "tif", "tiff", "czi", "vsf"))) {
+                //empaia does not like prefixed paths
+                $full_wsi_empaia_path = str_starts_with($full_wsi_path, '/') ? substr($full_wsi_path, 1) : $full_wsi_path;
+
+                $img = $image_preview_url_maker_empaia($full_wsi_empaia_path);
                 $img = "<span class='tiff-container'><img class='mr-2 tiff-preview' src=\"$img\"></span>";
 
-                $actions.="<span id='{$full_wsi_path}-meta' style='display: none' data-microns-x='$micron_x' data-microns-y='$micron_y'></span>";
+                $actions.="<span id='{$full_wsi_empaia_path}-meta' style='display: none' data-microns-x='$micron_x' data-microns-y='$micron_y'></span>";
 
 
                 if (isset($file_meta_data[$fname])) {
@@ -664,11 +667,11 @@ EOF;
 
 
                 if (FM_ADVANCED_MODE) {
-                    $actions.="<a onclick=\"viewerConfig.bgProto('$empaia_background_protocol').setTissue('$full_wsi_path');\" class='pointer'>Add as background.</a>
-<a onclick=\"viewerConfig.layerProto('$empaia_layer_protocol').setShaderFor('$full_wsi_path', 'heatmap', 'empaia');\" class='pointer'>Add as layer.</a>";
+                    $actions.="<a onclick=\"viewerConfig.bgProto('$empaia_background_protocol').setTissue('$full_wsi_empaia_path');\" class='pointer'>Add as background.</a>
+<a onclick=\"viewerConfig.layerProto('$empaia_layer_protocol').setShaderFor('$full_wsi_empaia_path', 'heatmap', 'empaia');\" class='pointer'>Add as layer.</a>";
                 }
 
-                $title_tags = "onclick=\"viewerConfig.withNewTab(false).bgProto('$empaia_background_protocol').go('".FM_USER_ID."', '$fname', '$full_wsi_path');\" class=\"pointer\"";
+                $title_tags = "onclick=\"viewerConfig.withNewTab(false).bgProto('$empaia_background_protocol').go('".FM_USER_ID."', '$fname', '$full_wsi_empaia_path');\" class=\"pointer\"";
                 $title_prefix = "$title_prefix<i class='xopat'>&#xe802;</i>";
             } else if ($is_plain_image) {
                 $img = $is_link ? 'fa fa-file-text-o' : fm_get_file_icon_class($fname);

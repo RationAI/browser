@@ -14,8 +14,8 @@ $image_preview_url_maker_empaia = function ($file) {
 };
 
 //dirty config setup
-$empaia_background_protocol = "`\${path}/v3/batch/info?slides=\${data}`";
-$empaia_layer_protocol = "`\${path}/v3/batch/info?slides=\${data.join(\",\")}`";
+$empaia_background_protocol = "`/wsi-service/v3/batch/info?slides=\${data}`";
+$empaia_layer_protocol = "`/wsi-service/v3/batch/info?slides=\${data.join(\",\")}`";
 
 //Array of folders excluded from listing
 $GLOBALS['exclude_folders'] = array(

@@ -219,12 +219,14 @@ class ViewerConfig {
         if (proto) {
             this._bgproto = proto;
         }
+        return this;
     }
 
     layerProto(proto = null) {
         if (proto) {
             this._layproto = proto;
         }
+        return this;
     }
 
     withSession(referenceFilePath) {
