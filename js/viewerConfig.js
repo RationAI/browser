@@ -80,6 +80,9 @@ class ViewerConfig {
             this.hasVisualOutput = true;
         }
 
+        this._layproto = null;
+        this._bgproto = null;
+
         this.initHiddenForm();
 
         this.import(this.props.data);
@@ -208,6 +211,19 @@ class ViewerConfig {
         }
     }
 
+    // set custom protocols, hacky: it does not allow resetting protocol since empaia server can handle all, but not iipimage /default/
+    bgProto(proto= null) {
+        if (proto) {
+            this._bgproto = proto;
+        }
+    }
+
+    layerProto(proto = null) {
+        if (proto) {
+            this._layproto = proto;
+        }
+    }
+
     withSession(referenceFilePath) {
         if (typeof referenceFilePath !== "string" || !referenceFilePath.trim()) {
             //not supported
@@ -283,7 +299,7 @@ class ViewerConfig {
         return this;
     }
 
-    go(user, title, image, ...dataArray) {
+    go(user, title, image) {
         //todo user ignored?
         const _oldVisualOutput = this.hasVisualOutput;
         const _oldData = this.props.data;
@@ -293,18 +309,8 @@ class ViewerConfig {
         this.hasVisualOutput = false;
         this.setTissue(image);
 
-        //todo reuse?
-        if (dataArray.length < 1) {
-            delete data.visualizations;
-        } else {
-            let index = 0;
-            for (let item of dataArray) {
-                item.shader.dataReferences = [data.data.length];
-                data.data.push(item.data);
-                vis.shaders[index++] = item.shader;
-            }
-            data.visualizations.push(vis);
-        }
+        //go does not support shaders -> not used
+        delete data.visualizations;
 
         const _this = this;
         this.open(() => {
@@ -379,7 +385,8 @@ class ViewerConfig {
         if (!vis) {
             this.props.data.visualizations = vis = [{
                 lossless: true,
-                shaders: {}
+                shaders: {},
+                protocol: this._layproto
             }];
         }
         vis = vis[0];
@@ -448,7 +455,8 @@ class ViewerConfig {
         this.props.data.background = [{
             dataReference: this._insertImageData(tissuePath),
             lossless: false,
-            microns: microns
+            microns: microns,
+            protocol: this._bgproto
         }];
         this._referencedTissue = tissuePath;
         this.checkIsVisible();

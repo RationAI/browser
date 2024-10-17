@@ -522,7 +522,8 @@ EOF;
 
             $is_link = is_link($full_path);
             $ext = pathinfo($fname, PATHINFO_EXTENSION);
-            $is_tiff = strtolower($ext) === "tiff" || strtolower($ext) === "tif";
+            $extension = strtolower($ext);
+            $is_tiff = $extension === "tiff" || $extension === "tif";
             $actions = ""; $container_attrs = "";
             $modif = date("d.m.y H:i", filemtime($full_path));
             $filesize_raw = filesize($full_path);
@@ -599,7 +600,57 @@ EOF;
 
                 $title_tags = "onclick=\"viewerConfig.withNewTab(false).go('".FM_USER_ID."', '$fname', '$full_wsi_path');\" class=\"pointer\"";
                 $title_prefix = "$title_prefix<i class='xopat'>&#xe802;</i>";
+            } else if (in_array($extension, array("bif", "dcm", "isyntax", "mrxs", "ndpi", "btf", "tf2", "tf8", "scn", "svs", "tif", "tiff", "czi", "vsf"))) {
+                $img = $image_preview_url_maker_empaia($full_wsi_path);
+                $img = "<span class='tiff-container'><img class='mr-2 tiff-preview' src=\"$img\"></span>";
 
+                $actions.="<span id='{$full_wsi_path}-meta' style='display: none' data-microns-x='$micron_x' data-microns-y='$micron_y'></span>";
+
+
+                if (isset($file_meta_data[$fname])) {
+                    $file_meta = $file_meta_data[$fname];
+                    if (!$file_meta["seen"]) {
+                        $row_class .= "not-yet-seen";
+                        $container_attrs = 'title="Not yet viewed" ';
+                        $status = "New file.";
+                    }
+                    if ($file_meta["session"]) {
+                        $exports = rawurlencode($file_meta["session"]);
+                        $actions .= "<a class='Label Label--primary label-btn' onclick='openHtmlExport(`$exports`, `".FM_XOPAT_URL."`)'> Open saved session. </a>";
+                    }
+
+                    $generated = false;
+                    foreach ($file_meta["events"] as $i=>$event) {
+                        // NOTE: no-todo: drops support for analysis
+
+                        if ($event === "mirax-importer") {
+                            if ($file_meta["event_data"][$i] === "processing-finished") {
+                                $generated = true;
+                            } else if ($file_meta["event_data"][$i] === "failed") {
+                                $status = "Not Available!";
+                                $generated = true;
+                            }
+
+                        }
+                    }
+                    if (!$generated) {
+                        $created_at = strtotime($file_meta["created"]) ?? -1;
+                        if ($created_at > 0 && time() - $created_at < 3600) {
+                            $status .= " Processing...";
+                        } else {
+                            $status .= " Error (uploading)";
+                        }
+                    }
+                }
+
+
+                if (FM_ADVANCED_MODE) {
+                    $actions.="<a onclick=\"viewerConfig.bgProto('$empaia_background_protocol').setTissue('$full_wsi_path');\" class='pointer'>Add as background.</a>
+<a onclick=\"viewerConfig.layerProto('$empaia_layer_protocol').setShaderFor('$full_wsi_path', 'heatmap', 'empaia');\" class='pointer'>Add as layer.</a>";
+                }
+
+                $title_tags = "onclick=\"viewerConfig.withNewTab(false).bgProto('$empaia_background_protocol').go('".FM_USER_ID."', '$fname', '$full_wsi_path');\" class=\"pointer\"";
+                $title_prefix = "$title_prefix<i class='xopat'>&#xe802;</i>";
             } else {
                 $img = $is_link ? 'fa fa-file-text-o' : fm_get_file_icon_class($fname);
                 $img = "<i class=\"$img\"></i>&nbsp;";

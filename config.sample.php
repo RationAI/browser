@@ -22,6 +22,15 @@ $image_preview_url_maker = function ($file) {
 return "http://localhost:8080/iipsrv.fcgi?Deepzoom={$file}_files/0/0_0.jpg";
 };
 
+ * // Hacky support for empaia:
+$image_preview_url_maker_empaia = function ($file) {
+  ...
+};
+ * // Should not be changed:
+$empaia_background_protocol = "`\${path}/v3/batch/info?slides=\${data}`";
+$empaia_layer_protocol = "`\${path}/v3/batch/info?slides=\${data.join(\",\")}`";
+
+ *
 //Array of folders excluded from listing
 $GLOBALS['exclude_folders'] = array(
 '.git'

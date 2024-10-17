@@ -6,6 +6,14 @@ $image_preview_url_maker = function ($file) {
     return "/iipsrv/iipsrv.fcgi?Deepzoom={$file}_files/1/0_0.jpg";
 };
 
+$image_preview_url_maker_empaia = function ($file) {
+    return "/wsi-service/v3/slides/thumbnail/max_size/500/500?slide={$file}";
+};
+
+//dirty config setup
+$empaia_background_protocol = "`\${path}/v3/batch/info?slides=\${data}`";
+$empaia_layer_protocol = "`\${path}/v3/batch/info?slides=\${data.join(\",\")}`";
+
 //Array of folders excluded from listing
 $GLOBALS['exclude_folders'] = array(
     '.git'
