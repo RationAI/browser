@@ -6,15 +6,48 @@ if (!defined('PATH_TO_IS_MANAGER')) {
     die("Cannot include the file directly without providing PATH_TO_IS_MANAGER global variable with path to the browser repository root.");
 }
 
-//for debug see what's going on
-set_exception_handler(function ($exception) {
-    echo "Uncaught exception: " , $exception->getMessage(), "\n";
-});
-
 //custom configuration file
 if (!defined('FM_CONFIG') && is_file(PATH_TO_IS_MANAGER . 'config.php')) {
     define('FM_CONFIG', PATH_TO_IS_MANAGER . 'config.php');
 }
+
+/**
+ * Safely write data
+ */
+function file_safe_put_contents($filename, $data, $flags = 0, $context = null) {
+    $tmp_file = ".~$filename";
+    if (file_put_contents($tmp_file, $data, $flags, $context) === strlen($data)) {
+        return rename($tmp_file, $filename, $context);
+    }
+    @unlink($tmp_file, $context);
+    return false;
+}
+
+/**
+ * Clean path
+ * @param string $path
+ * @return string
+ */
+function fm_clean_path($path) {
+    $path = $path ? trim($path) : "";
+    $path = trim($path, '\\/');
+    $path = str_replace(array('../', '..\\'), '', $path);
+    if ($path == '..') {
+        $path = '';
+    }
+    return str_replace('\\', '/', $path);
+}
+
+require_once PATH_TO_IS_MANAGER . "inc/config.php";
+//for debug see what's going on
+if (FM_DEBUG && defined("FM_AJAX")) {
+    set_exception_handler(function ($exception) {
+        echo "Uncaught exception: " , $exception->getMessage(), "\n";
+        var_dump($exception->getTraceAsString());
+    });
+}
+
+define('USES_DATABASE', boolval(XO_DB_ROOT));
 
 // Parse input data
 if (!count($_POST)) {
@@ -25,8 +58,6 @@ if (!count($_POST)) {
         $_POST = [];
     }
 }
-
-require_once PATH_TO_IS_MANAGER . "inc/config.php";
 
 // if fm included
 if (defined('FM_EMBED')) {
@@ -46,7 +77,8 @@ if (defined('FM_EMBED')) {
 
     session_cache_limiter('');
     session_name('filemanager');
-    define('_FM_USE_AUTH', true);
+
+    define('_FM_USE_AUTH', FM_USE_AUTH && USES_DATABASE);
 }
 session_start();
 
@@ -72,13 +104,13 @@ if (!@is_dir($root_path)) {
     exit;
 }
 $image_server_root_url = fm_clean_path($rel_root_path);
-$root_url = fm_clean_path(FM_HTTP_PATH);
+$rel_path = fm_clean_path(FM_HTTP_PATH);
 
 // abs path for site
 defined('FM_SHOW_HIDDEN') || define('FM_SHOW_HIDDEN', FM_SHOW_HIDDEN_FILES);
 defined('FM_ROOT_PATH') || define('FM_ROOT_PATH', $root_path);
 defined('FM_WSI_SERVER_PATH') || define('FM_WSI_SERVER_PATH', $image_server_root_url);
-define('FM_ROOT_URL', ($is_https ? 'https' : 'http') . '://' . FM_HTTP_HOST . (!empty($root_url) ? '/' . $root_url : ''));
+define('FM_ROOT_URL', ($is_https ? 'https' : 'http') . '://' . FM_HTTP_HOST . (!empty($rel_path) ? '/' . $rel_path : ''));
 defined('FM_SELF_URL') || define('FM_SELF_URL', ($is_https ? 'https' : 'http') . '://' . FM_HTTP_HOST . $_SERVER['PHP_SELF']);
 
 // logout
@@ -91,7 +123,7 @@ if (isset($_GET['logout'])) {
 
 
 //todo support this feature
-const FM_READONLY = false;
+const FM_READONLY = true;
 const FM_IS_WIN = DIRECTORY_SEPARATOR == '\\';
 
 // get path
@@ -110,3 +142,4 @@ define('FM_SEARCH_QUERY', $s);
 defined('FM_TREEVIEW') || define('FM_TREEVIEW', false); //todo support?
 
 unset($p, $s, $use_highlightjs, $highlightjs_style);
+

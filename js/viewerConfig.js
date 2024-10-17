@@ -63,7 +63,10 @@ form.submit();
 class ViewerConfig {
 
     constructor(props, interactiveShaderConfigUrl) {
+        this.plainImageProtocol = `({type:'image',url:data,buildPyramid:false})`;
+
         this.props = props;
+        this._dataCountMap = {};
         this.props.data = this.props.data || {};
         this.imagePreviewMaker = (file) => {
             //todo support for playin images? now only image server
@@ -96,63 +99,63 @@ class ViewerConfig {
             });
 
             document.addEventListener('DOMContentLoaded', (event) => {
-                function handleDragStart(e) {
-                    draggedElement = this;
-                    this.style.opacity = '0.4';
-                }
-
-                function handleDragEnd(e) {
-                    draggedElement = null;
-                    this.style.opacity = '1';
-                }
-
-                function handleDragOver(e) {
-                    e.preventDefault();
-                    return false;
-                }
-
-                function handleDrop(e) {
-                    e.stopPropagation(); // stops the browser from redirecting.
-                    return false;
-                }
-                let items = document.querySelectorAll('.viewer-config-draggable');
-                items.forEach(function(item) {
-                    item.draggable = true;
-                    item.addEventListener('dragstart', handleDragStart);
-                    // item.addEventListener('dragover', handleDragOver);
-                    item.addEventListener('dragend', handleDragEnd);
-
-                });
-
-                let parent = document.getElementById('viewer-config-shader-setup');
-                parent.addEventListener('dragstart', handleDragStart);
-                parent.addEventListener('dragenter', (e) => {
-                    console.log(e);
-                    e.toElement.classList.add('drag-focus');
-                });
-                parent.addEventListener('dragover', handleDragOver);
-                parent.addEventListener('dragleave', (e) => {
-                    console.log(e);
-                    e.toElement.classList.remove('drag-focus');
-                });
-                parent.addEventListener('dragend', handleDragEnd);
-                parent.addEventListener('drop', (e) => {
-                    if (!draggedElement) throw "Invalid dragged node.";
-
-                    let fullPath = draggedElement.dataset.source;
-                    if (self.props.data.data.includes(fullPath)) return; //todo message
-                    let banner = draggedElement.querySelectorAll('img')[0].src;
-                    // let newElem = document.createElement('img');
-                    // newElem.classList.add('banner-image', 'layer-skew', 'position-absolute');
-                    // newElem.style.top = `${-parent.childNodes.length*25}px`;
-                    // newElem.src = banner;
-                    // parent.style.height = `${70+parent.childNodes.length*22}px`;
-                    // parent.classList.remove('preview');
-                    // parent.appendChild(newElem);
-
-                    self._setRenderLayer(fullPath);
-                    self._setImportShaderFor(fullPath, 'heatmap');
-                });
+                // function handleDragStart(e) {
+                //     draggedElement = this;
+                //     this.style.opacity = '0.4';
+                // }
+                //
+                // function handleDragEnd(e) {
+                //     draggedElement = null;
+                //     this.style.opacity = '1';
+                // }
+                //
+                // function handleDragOver(e) {
+                //     e.preventDefault();
+                //     return false;
+                // }
+                //
+                // function handleDrop(e) {
+                //     e.stopPropagation(); // stops the browser from redirecting.
+                //     return false;
+                // }
+                // let items = document.querySelectorAll('.viewer-config-draggable');
+                // items.forEach(function(item) {
+                //     item.draggable = true;
+                //     item.addEventListener('dragstart', handleDragStart);
+                //     // item.addEventListener('dragover', handleDragOver);
+                //     item.addEventListener('dragend', handleDragEnd);
+                //
+                // });
+                //
+                // let parent = document.getElementById('viewer-config-shader-setup');
+                // parent.addEventListener('dragstart', handleDragStart);
+                // parent.addEventListener('dragenter', (e) => {
+                //     console.log(e);
+                //     e.toElement.classList.add('drag-focus');
+                // });
+                // parent.addEventListener('dragover', handleDragOver);
+                // parent.addEventListener('dragleave', (e) => {
+                //     console.log(e);
+                //     e.toElement.classList.remove('drag-focus');
+                // });
+                // parent.addEventListener('dragend', handleDragEnd);
+                // parent.addEventListener('drop', (e) => {
+                //     if (!draggedElement) throw "Invalid dragged node.";
+                //
+                //     let fullPath = draggedElement.dataset.source;
+                //     if (self.props.data.data.includes(fullPath)) return; //todo message
+                //     let banner = draggedElement.querySelectorAll('img')[0].src;
+                //     // let newElem = document.createElement('img');
+                //     // newElem.classList.add('banner-image', 'layer-skew', 'position-absolute');
+                //     // newElem.style.top = `${-parent.childNodes.length*25}px`;
+                //     // newElem.src = banner;
+                //     // parent.style.height = `${70+parent.childNodes.length*22}px`;
+                //     // parent.classList.remove('preview');
+                //     // parent.appendChild(newElem);
+                //
+                //     const key = self._addLayerToVis(fullPath, 'heatmap');
+                //     self._addLayerToDOM(key, fullPath);
+                // });
 
                 let cookie = readCookie('configuration');
                 if (cookie) self.import(cookie);
@@ -163,7 +166,7 @@ class ViewerConfig {
     initHtml() {
         let container = document.getElementById(this.props.containerId);
         if (!container) throw `Container #${this.props.containerId} must exist!`;
-        container.style.minWidth = '250px';
+        container.style.width = '250px';
 
         // let bgTissueConfig = this.props.data?.background;
         // bgTissueConfig = bgTissueConfig && bgTissueConfig[0];
@@ -253,7 +256,22 @@ class ViewerConfig {
             delete plugins["user-session"];
         }
 
-        if (this.props.importerMetaEndpoint) {
+        //todo ugly...
+        const setQuPathPresets = () => {
+            this.setPluginMeta("gui_annotations", [{"color":"#b4b4b4","factoryID":"polygon","presetID":
+                    "Ignore*","meta":{"category":{"name":"Category","value":"Ignore*"}}},{"color":"#c80000","factoryID":"polygon",
+                "presetID":"Tumor","meta":{"category":{"name":"Category","value":"Tumor"}}},{"color":"#96c896","factoryID":"polygon",
+                "presetID":"Stroma","meta":{"category":{"name":"Category","value":"Stroma"}}},{"color":"#a05aa0","factoryID":"polygon",
+                "presetID":"Immune cells","meta":{"category":{"name":"Category","value":"Immune cells"}}},{"color":"#323232",
+                "factoryID":"polygon","presetID":"Necrosis","meta":{"category":{"name":"Category","value":"Necrosis"}}},{"color":
+                    "#0000b4","factoryID":"polygon","presetID":"Region*","meta":{"category": {"name":"Category","value":"Region*"}}},
+                {"color":"#fa3e3e","factoryID":"polygon","presetID":"Positive","meta":{"category":{"name":"Category","value":"Positive"
+                        }}},{"color":"#7070e1","factoryID":"polygon","presetID":"Negative","meta":{"category":{"name":"Category","value":
+                                "Negative"}}}], "staticPresets");
+            this.setPluginMeta("gui_annotations", false, "enablePresetModify");
+        };
+
+        if (this.props.importerMetaEndpoint && this._referencedTissue.includes(".mrxs")) {
             //fetch additional meta
             const _this = this;
             const url = `${this.props.importerMetaEndpoint}?ajax=imageCoordinatesOffset&tissue=${this._referencedTissue}`;
@@ -267,6 +285,7 @@ class ViewerConfig {
                 data => {
                     //todo json parse ugly...
                     _this.setPluginMeta("gui_annotations", JSON.parse(data.payload) || [0, 0], "convertors", "imageCoordinatesOffset");
+                    setQuPathPresets();
                     document.getElementById("visualisation").value = _this.export();
                     document.getElementById("redirect").submit();
                     onFinish();
@@ -276,6 +295,7 @@ class ViewerConfig {
 
                 //just submit
                 if (confirm("Failed to read WSI metadata - some things (qupath annotations) might not work as expected. Continue?")) {
+                    setQuPathPresets();
                     document.getElementById("visualisation").value = _this.export();
                     document.getElementById("redirect").submit();
                     onFinish();
@@ -299,39 +319,144 @@ class ViewerConfig {
         return this;
     }
 
-    go(user, title, image) {
-        //todo user ignored?
-        const _oldVisualOutput = this.hasVisualOutput;
-        const _oldData = this.props.data;
 
-        let data;
-        this.props.data = data = {};
+    go(user, title, image, ...dataArray) {
+        this._goInit();
+        this.setPlainWSI(image);
+        this._goFinish(user, title, ...dataArray);
+    }
+
+    goPlain(user, title, image, ...dataArray) {
+        this._goInit();
+        this.setPlainImage(image);
+        this._goFinish(user, title, ...dataArray);
+    }
+
+    _goInit() {
+        this._oldVisualOutput = this.hasVisualOutput;
+        this._oldData = this.props.data;
+
+        this.props.data = {};
         this.hasVisualOutput = false;
-        this.setTissue(image);
+    }
 
-        //go does not support shaders -> not used
-        delete data.visualizations;
+    _goFinish(user, title, ...dataArray) {
+        //todo user ignored?
+        let data = this.props.data;
+        //todo reuse?
+        if (dataArray.length < 1) {
+            delete data.visualizations;
+        } else {
+            let index = 0,
+                vis = {
+                    lossless: true,
+                    shaders: {}
+                };
+            for (let item of dataArray) {
+                item.shader.dataReferences = [data.data.length];
+                data.data.push(item.data);
+                vis.shaders[index++] = item.shader;
+            }
+            data.visualizations.push(vis);
+        }
 
         const _this = this;
         this.open(() => {
-            _this.hasVisualOutput = _oldVisualOutput;
-            _this.props.data = _oldData;
+            _this.hasVisualOutput = _this._oldVisualOutput;
+            delete _this._oldVisualOutput;
+            _this.props.data = _this._oldData;
+            delete _this._oldData;
         });
     }
 
-    setTissue(tissuePath, visual=true) {
+    setPlainWSI(tissuePath, visual=true) {
         this._setImportTissue(tissuePath);
-        if (visual) this._setRenderTissue(tissuePath);
+        if (visual && this.hasVisualOutput) this._setRenderTissue(tissuePath);
         this.withSession(tissuePath); //todo dirty, and what if multiple files presented -> session stored to one of them :/
+        return this;
+    }
+
+    setPlainImage(url, visual=true) {
+        //todo problem if in safe mode, does not work :/
+        this._setImportTissue(url);
+        //change protocol -> plain image object config
+        this.props.data.background[0].protocol = this.plainImageProtocol;
+        if (visual && this.hasVisualOutput) {
+            this._setRenderPlainImage(url);
+        }
+        this.withSession(url);
         return this;
     }
 
     setShaderFor(dataPath, shaderType='heatmap') {
         if (this.hasVisualOutput && !this.visible) return;
-        if (this._setImportShaderFor(dataPath, shaderType)) {
-            this._setRenderLayer(dataPath);
-        }
+        if (!this.checkCanInsertWSIImageLayer()) return;
+
+        const vis = this._ensureVisExists();
+        delete vis.protocol;
+        const key = this._addLayerToVis(dataPath, shaderType);
+        this._addLayerToDOM(key, dataPath);
         return this;
+    }
+
+    setPlainImageShaderFor(dataPath, shaderType='heatmap') {
+        if (this.hasVisualOutput && !this.visible) return;
+        if (!this.checkCanInsertPlainImageLayer()) return;
+
+        const vis = this._ensureVisExists();
+        vis.protocol = this.plainImageProtocol;
+        const key = this._addLayerToVis(dataPath, shaderType);
+        this._addLayerToDOM(key, dataPath);
+        return this;
+    }
+
+    get isPlainImageBackground() {
+        //we render only single background here
+        return !! this.props.data.background?.[0]?.protocol;
+    }
+
+    get isPlainImageOverlay() {
+        const vis = this._ensureVisExists();
+        return !! vis.protocol;
+    };
+
+    checkCanInsertPlainImageLayer() {
+        return this._checkCanInsertAndRemove("Plain images can be only inserted as single layer. Remove existing layers?")
+    }
+
+    checkCanInsertWSIImageLayer() {
+        if (!this.isPlainImageOverlay) return true;
+        return this._checkCanInsertAndRemove("Plain images are incompatible with pyramidal images. Remove existing image layer?")
+    }
+
+    _checkCanInsertAndRemove(message) {
+        const vis = this._ensureVisExists();
+        const layers = Object.keys(vis.shaders);
+        if (layers.length > 0) {
+            if (confirm(message)) {
+                layers.forEach(l => this._unsetLayer(l));
+                document.getElementById('viewer-config-shader-setup').innerHTML = '';
+                return true;
+            }
+            return false;
+        }
+        return true;
+    }
+
+    changeLayerConfigFor(uid, shaderType) {
+        const vis = this._ensureVisExists();
+
+        let shaderObject = vis.shaders[uid];
+        if (shaderObject) {
+            if (typeof shaderType === "string") {
+                shaderObject.type = shaderType;
+            } else {
+                shaderType.dataReferences = shaderObject.dataReferences;
+                vis.shaders[uid] = shaderType;
+            }
+        } else {
+            throw "Invalid change of params for non-existing layer shader!";
+        }
     }
 
     setPluginMeta(plugin_id, value, ...keys) {
@@ -363,21 +488,18 @@ class ViewerConfig {
         return this;
     }
 
-    _unsetLayer(node) {
-        node =  node.parentNode;
+    _unsetLayer(uid) {
         let vis = this.props.data.visualizations;
 
         if (vis?.length > 0) {
-            vis = vis[0];
-            let path = node.dataset.path;
-            if (path) {
-                let layer = vis.shaders[path];
-                if (layer && this._removeImageData(path) !== -1) {
-                    delete vis.shaders[path];
-                    node.remove();
-                }
+            vis = vis[0]; //just one possible
+            let layer = vis.shaders[uid];
+            if (layer && this._removeImageData(uid)) {
+                delete vis.shaders[uid];
+                return true;
             }
         }
+        return false;
     }
 
     _ensureVisExists() {
@@ -393,20 +515,20 @@ class ViewerConfig {
         return vis;
     }
 
-    _setImportShaderFor(dataPath, shaderType) {
+    _addLayerToVis(dataPath, shaderType) {
         const vis = this._ensureVisExists();
 
-        if (vis.shaders[dataPath]) {
-            if (typeof shaderType === "string") {
-                vis.shaders[dataPath].type = shaderType;
-            } else {
-                vis.shaders[dataPath] = shaderType;
+        let shaderKey = dataPath,
+            zeroShaderObject = vis.shaders[shaderKey];
+        if (zeroShaderObject) {
+            if (zeroShaderObject._browserCount === undefined) {
+                zeroShaderObject._browserCount = 1;
             }
-            return false;
+            shaderKey += "-" + zeroShaderObject._browserCount++;
         }
 
         if (typeof shaderType === "string") {
-            vis.shaders[dataPath] = {
+            vis.shaders[shaderKey] = {
                 type: shaderType,
                 dataReferences: [this._insertImageData(dataPath)],
                 fixed: false,
@@ -414,9 +536,9 @@ class ViewerConfig {
             };
         } else {
             shaderType.dataReferences = [this._insertImageData(dataPath)];
-            vis.shaders[dataPath] = shaderType;
+            vis.shaders[shaderKey] = shaderType;
         }
-        return true;
+        return shaderKey;
     }
 
     _insertImageData(dataPath) {
@@ -428,6 +550,9 @@ class ViewerConfig {
         if (dataIndex === -1) {
             dataIndex = dataList.length;
             dataList.push(dataPath);
+            this._dataCountMap[dataPath] = 1;
+        } else {
+            this._dataCountMap[dataPath]++;
         }
         return dataIndex;
     }
@@ -439,9 +564,14 @@ class ViewerConfig {
         }
         let dataIndex = dataList.indexOf(dataPath);
         if (dataIndex !== -1) {
-            dataList.splice(dataIndex, 1);
+            this._dataCountMap[dataPath]--;
+            if (this._dataCountMap[dataPath] < 1) {
+                dataList.splice(dataIndex, 1);
+                delete this._dataCountMap[dataPath];
+            }
+            return true;
         }
-        return dataIndex;
+        return false;
     }
 
     _setImportTissue(tissuePath) {
@@ -464,15 +594,23 @@ class ViewerConfig {
 
     _setRenderTissue(tissuePath) {
         if (!this.hasVisualOutput) return;
-
         let filename = tissuePath.split("/");
         filename = filename[filename.length - 1];
+        this._setRenderBackground(filename, this.imagePreviewMaker(tissuePath));
+    }
 
+    _setRenderPlainImage(imageRelPath) {
+        let filename = imageRelPath.split("/");
+        filename = filename[filename.length - 1];
+        this._setRenderBackground(filename, imageRelPath);
+    }
+
+    _setRenderBackground(name, url) {
         document.getElementById("viewer-config-banner").innerHTML = `
-<img id="viewer-config-banner-image" class="banner-image" src="${this.imagePreviewMaker(tissuePath)}">
+<img id="viewer-config-banner-image" class="banner-image" src="${url}">
 <div class="width-full position-absolute bottom-0" style="height: 60px; background: background: var(--color-bg-primary);
 background: linear-gradient(0deg, var(--color-bg-primary) 0%, transparent 100%);"></div>
-<h3 class="position-absolute bottom-0 f3-light mx-3 my-2 no-wrap overflow-hidden">${filename}</h3>
+<h3 class="position-absolute bottom-0 f3-light mx-3 my-2 no-wrap overflow-hidden">${name}</h3>
 `;
     }
 
@@ -502,11 +640,15 @@ background: linear-gradient(0deg, var(--color-bg-primary) 0%, transparent 100%);
     _recordExternalConfig(shaderId, config) {
         //todo unsafe assignments?
         const vis = this._ensureVisExists();
+        const shader = vis.shaders[shaderId];
+        if (shader) {
+            config.dataReferences = shader.dataReferences;
+        }
         vis.shaders[shaderId] = config;
         document.getElementById('viewer-config-shader-select-'+shaderId).value = config.type;
     }
 
-    _setRenderLayer(dataPath) {
+    _addLayerToDOM(uid, dataPath, isPlainImage) {
         if (!this.hasVisualOutput) return;
 
         let shaderOpts = [
@@ -517,6 +659,7 @@ background: linear-gradient(0deg, var(--color-bg-primary) 0%, transparent 100%);
             {type: 'identity', title: 'Identity'},
         ].map(x => `<option name="shader-type" value="${x.type}">${x.title}</option>`);
 
+        let imageUrl = this.isPlainImageOverlay ? dataPath : this.imagePreviewMaker(dataPath);
         let newElem = document.createElement('div');
         newElem.dataset.source = dataPath;
         let filename = dataPath.split("/");
@@ -524,12 +667,12 @@ background: linear-gradient(0deg, var(--color-bg-primary) 0%, transparent 100%);
         newElem.classList.add('banner-container', 'position-relative');
         newElem.dataset.path = dataPath;
         newElem.innerHTML = `
-<span class="material-icons position-absolute left-0 pointer top-0" onclick="${this.props.windowName}._unsetLayer(this);">close</span>
-<img class="banner-image" src="${this.imagePreviewMaker(dataPath)}">
+<span class="material-icons position-absolute left-0 pointer top-0" onclick="${this.props.windowName}._unsetLayer(this) && this.remove();">close</span>
+<img class="banner-image" src="${imageUrl}">
 <h4 class="position-absolute bottom-0 f4-light mx-3 my-2 no-wrap overflow-hidden">${filename}</h4>
-<select class="viewer-config-shader-select position-absolute top-4 right-0" id="viewer-config-shader-select-${dataPath}"
-onchange="${this.props.windowName}.setShaderFor('${dataPath}', this.value);">${shaderOpts}</select>
-<button class="btn btn-sm position-absolute top-0 right-0" onclick="${this.props.windowName}._openExternalConfigurator('${dataPath}')">Configure shader</button>
+<select class="viewer-config-shader-select position-absolute top-4 right-0" id="viewer-config-shader-select-${uid}"
+onchange="${this.props.windowName}.changeLayerConfigFor('${uid}', this.value);">${shaderOpts}</select>
+<button class="btn btn-sm position-absolute top-0 right-0" onclick="${this.props.windowName}._openExternalConfigurator('${uid}')">Configure shader</button>
 `;
         document.getElementById('viewer-config-shader-setup').appendChild(newElem);
     }
@@ -538,7 +681,12 @@ onchange="${this.props.windowName}.setShaderFor('${dataPath}', this.value);">${s
         this.props.data = typeof data === "string" ? JSON.parse(data) : data;
         data = this.props.data;
         if (data.background && data.background.length > 0) {
-            this._setRenderTissue(data.data[data.background[0].dataReference]);
+            this._referencedTissue = data.data[data.background[0].dataReference];
+            if (this.isPlainImageBackground) {
+                this._setRenderPlainImage(this._referencedTissue);
+            } else {
+                this._setRenderTissue(this._referencedTissue);
+            }
         }
 
         //just one available
@@ -547,7 +695,7 @@ onchange="${this.props.windowName}.setShaderFor('${dataPath}', this.value);">${s
             for (let shaderKey in shaderList) {
                 let index = shaderList[shaderKey].dataReferences[0]; //just one supported
                 //just one avaliable
-                this._setRenderLayer(data.data[index]);
+                this._addLayerToDOM(shaderKey, data.data[index]);
             }
         }
 
