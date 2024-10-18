@@ -10,7 +10,7 @@ if (!isset($image_preview_url_maker)) {
 }
 
 $image_preview_url_maker_empaia = function ($file) {
-    return "/wsi-service/v3/slides/thumbnail/max_size/500/500?slide={$file}";
+    return "/wsi-service/v3/slides/thumbnail/max_size/512/512?slide={$file}";
 };
 
 //dirty config setup

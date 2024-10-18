@@ -667,7 +667,7 @@ EOF;
 
 
                 if (FM_ADVANCED_MODE) {
-                    $actions.="<a onclick=\"viewerConfig.bgProto('$empaia_background_protocol').setTissue('$full_wsi_empaia_path');\" class='pointer'>Add as background.</a>
+                    $actions.="<a onclick=\"viewerConfig.bgProto('$empaia_background_protocol').setPlainWSI('$full_wsi_empaia_path');\" class='pointer'>Add as background.</a>
 <a onclick=\"viewerConfig.layerProto('$empaia_layer_protocol').setShaderFor('$full_wsi_empaia_path', 'heatmap', 'empaia');\" class='pointer'>Add as layer.</a>";
                 }
 
