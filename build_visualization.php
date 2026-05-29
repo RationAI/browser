@@ -105,9 +105,12 @@ $js_path = _FM_JS_PATH;
 $user_id = FM_USER_ID;
 $wsi_meta_api = FM_WSI_IMPORTER_API;
 $wsi_meta_api = $wsi_meta_api ? "'{$wsi_meta_api}'" : "undefined";
+$bg_proto = FM_XOPAT_BACKGROUND_PROTOCOL;
+$lay_proto = FM_XOPAT_VISUALIZATION_PROTOCOL;
+$plain_proto = FM_XOPAT_PLAIN_IMAGE_PROTOCOL;
 global $browser_relative_root;
 echo <<<EOF
-    
+
    <head>
    <script type="text/javascript" src="$js_path/viewerConfig.js">
 
@@ -122,6 +125,9 @@ echo <<<EOF
         viewerUrl: '$viewer_url',
         importerMetaEndpoint: $wsi_meta_api,
         urlRoot: '$browser_relative_root',
+        backgroundProtocol: '$bg_proto',
+        visualizationProtocol: '$lay_proto',
+        plainImageProtocol: '$plain_proto',
         data: '',
    });
    

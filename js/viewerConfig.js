@@ -63,7 +63,10 @@ form.submit();
 class ViewerConfig {
 
     constructor(props, interactiveShaderConfigUrl) {
-        this.plainImageProtocol = `({type:'image',url:data,buildPyramid:false})`;
+        // xOpat v3 protocol keys — must be registered in xopat env.json slide_protocols.
+        this.plainImageProtocol = props.plainImageProtocol || null;
+        this.bgProtocol = props.backgroundProtocol || null;
+        this.layerProtocol = props.visualizationProtocol || null;
 
         this.props = props;
         this._dataCountMap = {};
@@ -83,8 +86,8 @@ class ViewerConfig {
             this.hasVisualOutput = true;
         }
 
-        this._layproto = null;
-        this._bgproto = null;
+        this._layproto = this.layerProtocol;
+        this._bgproto = this.bgProtocol;
 
         this.initHiddenForm();
 
@@ -214,18 +217,16 @@ class ViewerConfig {
         }
     }
 
-    // set custom protocols, hacky: it does not allow resetting protocol since empaia server can handle all, but not iipimage /default/
-    bgProto(proto= null) {
-        if (proto) {
-            this._bgproto = proto;
-        }
+    // Override the background protocol with a registered xOpat v3 protocol key.
+    // Passing null/empty restores the constructor default (props.backgroundProtocol).
+    bgProto(proto = null) {
+        this._bgproto = proto || this.bgProtocol;
         return this;
     }
 
+    // Override the visualization-layer protocol with a registered xOpat v3 protocol key.
     layerProto(proto = null) {
-        if (proto) {
-            this._layproto = proto;
-        }
+        this._layproto = proto || this.layerProtocol;
         return this;
     }
 
@@ -379,10 +380,7 @@ class ViewerConfig {
     }
 
     setPlainImage(url, visual=true) {
-        //todo problem if in safe mode, does not work :/
-        this._setImportTissue(url);
-        //change protocol -> plain image object config
-        this.props.data.background[0].protocol = this.plainImageProtocol;
+        this._setImportTissue(url, this.plainImageProtocol);
         if (visual && this.hasVisualOutput) {
             this._setRenderPlainImage(url);
         }
@@ -394,9 +392,8 @@ class ViewerConfig {
         if (this.hasVisualOutput && !this.visible) return;
         if (!this.checkCanInsertWSIImageLayer()) return;
 
-        const vis = this._ensureVisExists();
-        delete vis.protocol;
-        const key = this._addLayerToVis(dataPath, shaderType);
+        this._ensureVisExists();
+        const key = this._addLayerToVis(dataPath, shaderType, this._layproto);
         this._addLayerToDOM(key, dataPath);
         return this;
     }
@@ -405,21 +402,35 @@ class ViewerConfig {
         if (this.hasVisualOutput && !this.visible) return;
         if (!this.checkCanInsertPlainImageLayer()) return;
 
-        const vis = this._ensureVisExists();
-        vis.protocol = this.plainImageProtocol;
-        const key = this._addLayerToVis(dataPath, shaderType);
+        this._ensureVisExists();
+        const key = this._addLayerToVis(dataPath, shaderType, this.plainImageProtocol);
         this._addLayerToDOM(key, dataPath);
         return this;
     }
 
     get isPlainImageBackground() {
-        //we render only single background here
-        return !! this.props.data.background?.[0]?.protocol;
+        if (!this.plainImageProtocol) return false;
+        const ref = this.props.data.background?.[0]?.dataReference;
+        if (typeof ref !== "number") return false;
+        const entry = this.props.data.data?.[ref];
+        return typeof entry === "object" && entry?.protocol === this.plainImageProtocol;
     }
 
     get isPlainImageOverlay() {
+        if (!this.plainImageProtocol) return false;
         const vis = this._ensureVisExists();
-        return !! vis.protocol;
+        const dataList = this.props.data.data;
+        if (!dataList) return false;
+        for (const shaderKey in vis.shaders) {
+            const refs = vis.shaders[shaderKey]?.dataReferences || [];
+            for (const ref of refs) {
+                const entry = dataList[ref];
+                if (typeof entry === "object" && entry?.protocol === this.plainImageProtocol) {
+                    return true;
+                }
+            }
+        }
+        return false;
     };
 
     checkCanInsertPlainImageLayer() {
@@ -510,14 +521,12 @@ class ViewerConfig {
             this.props.data.visualizations = vis = [{
                 lossless: true,
                 shaders: {},
-                protocol: this._layproto
             }];
         }
-        vis = vis[0];
-        return vis;
+        return vis[0];
     }
 
-    _addLayerToVis(dataPath, shaderType) {
+    _addLayerToVis(dataPath, shaderType, protoOverride) {
         const vis = this._ensureVisExists();
 
         let shaderKey = dataPath,
@@ -529,18 +538,63 @@ class ViewerConfig {
             shaderKey += "-" + zeroShaderObject._browserCount++;
         }
 
+        const dataIndex = this._insertImageData(dataPath);
+        // xOpat v3: protocol goes on the referenced data entry, not on the visualization.
+        this._setDataEntryFields(dataIndex, {
+            protocol: protoOverride !== undefined ? protoOverride : this._layproto,
+        });
         if (typeof shaderType === "string") {
             vis.shaders[shaderKey] = {
                 type: shaderType,
-                dataReferences: [this._insertImageData(dataPath)],
+                dataReferences: [dataIndex],
                 fixed: false,
                 params: {}
             };
         } else {
-            shaderType.dataReferences = [this._insertImageData(dataPath)];
+            shaderType.dataReferences = [dataIndex];
             vis.shaders[shaderKey] = shaderType;
         }
         return shaderKey;
+    }
+
+    _dataIdAt(index) {
+        const entry = this.props.data.data?.[index];
+        return typeof entry === "string" ? entry : entry?.dataID;
+    }
+
+    _findDataIndex(dataList, dataPath) {
+        for (let i = 0; i < dataList.length; i++) {
+            const e = dataList[i];
+            const id = typeof e === "string" ? e : e?.dataID;
+            if (id === dataPath) return i;
+        }
+        return -1;
+    }
+
+    // xOpat v3: protocol and microns live on the data entry (DataOverride),
+    // not on the background/visualization. Promote the string entry to an
+    // object the first time any field has to be attached; collapse back to a
+    // bare string when no override fields remain.
+    _setDataEntryFields(index, fields) {
+        const dataList = this.props.data.data;
+        if (!dataList || index < 0 || index >= dataList.length) return;
+        const current = dataList[index];
+        const incoming = {};
+        for (const [k, v] of Object.entries(fields)) {
+            if (v !== undefined && v !== null) incoming[k] = v;
+        }
+        if (typeof current === "string" && Object.keys(incoming).length === 0) return;
+        const next = typeof current === "string" ? { dataID: current } : { ...current };
+        for (const [k, v] of Object.entries(fields)) {
+            if (v === undefined || v === null) delete next[k];
+            else next[k] = v;
+        }
+        const keys = Object.keys(next);
+        if (keys.length === 1 && typeof next.dataID === "string") {
+            dataList[index] = next.dataID;
+        } else {
+            dataList[index] = next;
+        }
     }
 
     _insertImageData(dataPath) {
@@ -548,7 +602,7 @@ class ViewerConfig {
         if (!dataList) {
             this.props.data.data = dataList = [];
         }
-        let dataIndex = dataList.indexOf(dataPath);
+        let dataIndex = this._findDataIndex(dataList, dataPath);
         if (dataIndex === -1) {
             dataIndex = dataList.length;
             dataList.push(dataPath);
@@ -564,7 +618,7 @@ class ViewerConfig {
         if (!dataList) {
             this.props.data.data = dataList = [];
         }
-        let dataIndex = dataList.indexOf(dataPath);
+        let dataIndex = this._findDataIndex(dataList, dataPath);
         if (dataIndex !== -1) {
             this._dataCountMap[dataPath]--;
             if (this._dataCountMap[dataPath] < 1) {
@@ -576,7 +630,7 @@ class ViewerConfig {
         return false;
     }
 
-    _setImportTissue(tissuePath) {
+    _setImportTissue(tissuePath, protoOverride) {
         let microns = undefined;
         const meta = document.getElementById(`${tissuePath}-meta`);
         if (meta) {
@@ -584,11 +638,15 @@ class ViewerConfig {
             if (microns < 0) microns = undefined;
         }
 
-        this.props.data.background = [{
-            dataReference: this._insertImageData(tissuePath),
-            lossless: false,
+        const dataIndex = this._insertImageData(tissuePath);
+        // xOpat v3: attach protocol + microns to the data entry itself.
+        this._setDataEntryFields(dataIndex, {
+            protocol: protoOverride !== undefined ? protoOverride : this._bgproto,
             microns: microns,
-            protocol: this._bgproto
+        });
+        this.props.data.background = [{
+            dataReference: dataIndex,
+            lossless: false,
         }];
         this._referencedTissue = tissuePath;
         this.checkIsVisible();
@@ -683,7 +741,7 @@ onchange="${this.props.windowName}.changeLayerConfigFor('${uid}', this.value);">
         this.props.data = typeof data === "string" ? JSON.parse(data) : data;
         data = this.props.data;
         if (data.background && data.background.length > 0) {
-            this._referencedTissue = data.data[data.background[0].dataReference];
+            this._referencedTissue = this._dataIdAt(data.background[0].dataReference);
             if (this.isPlainImageBackground) {
                 this._setRenderPlainImage(this._referencedTissue);
             } else {
@@ -697,7 +755,7 @@ onchange="${this.props.windowName}.changeLayerConfigFor('${uid}', this.value);">
             for (let shaderKey in shaderList) {
                 let index = shaderList[shaderKey].dataReferences[0]; //just one supported
                 //just one avaliable
-                this._addLayerToDOM(shaderKey, data.data[index]);
+                this._addLayerToDOM(shaderKey, this._dataIdAt(index));
             }
         }
 

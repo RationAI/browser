@@ -13,10 +13,6 @@ $image_preview_url_maker_empaia = function ($file) {
     return "/wsi-service/v3/slides/thumbnail/max_size/512/512?slide_id={$file}";
 };
 
-//dirty config setup
-$empaia_background_protocol = "`/wsi-service/v3/batch/info?slides=\${data}`";
-$empaia_layer_protocol = "`/wsi-service/v3/batch/info?slides=\${data.join(\",\")}`";
-
 //Array of folders excluded from listing
 $GLOBALS['exclude_folders'] = array(
     '.git'
@@ -32,8 +28,15 @@ if (defined('FM_DEBUG') && FM_DEBUG) {
     ini_set('display_errors', 'On');
 }
 
-//Url of the Viewer
+//Url of the Viewer (xOpat v3)
 defined('FM_XOPAT_URL') || define('FM_XOPAT_URL', "index.php");
+
+// Slide-protocol keys passed to xOpat v3. Each must be a key registered in
+// xopat's env.json under core.client.<active>.slide_protocols. xOpat v3 rejects
+// inline protocol templates in secure mode — only registry keys are accepted.
+defined('FM_XOPAT_BACKGROUND_PROTOCOL')    || define('FM_XOPAT_BACKGROUND_PROTOCOL',    'wsi_service');
+defined('FM_XOPAT_VISUALIZATION_PROTOCOL') || define('FM_XOPAT_VISUALIZATION_PROTOCOL', 'wsi_service');
+defined('FM_XOPAT_PLAIN_IMAGE_PROTOCOL')   || define('FM_XOPAT_PLAIN_IMAGE_PROTOCOL',   'plain_image');
 
 // Default language
 defined('FM_LANG') || define('FM_LANG', 'en');

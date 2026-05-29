@@ -26,9 +26,6 @@ return "http://localhost:8080/iipsrv.fcgi?Deepzoom={$file}_files/0/0_0.jpg";
 $image_preview_url_maker_empaia = function ($file) {
   ...
 };
- * // Should not be changed:
-$empaia_background_protocol = "`\${path}/v3/batch/info?slides=\${data}`";
-$empaia_layer_protocol = "`\${path}/v3/batch/info?slides=\${data.join(\",\")}`";
 
  *
 //Array of folders excluded from listing
@@ -41,8 +38,17 @@ $GLOBALS['exclude_folders'] = array(
  * leave out anything you don't want to override
  *
 
-//Url of the Viewer
+//Url of the Viewer (xOpat v3)
 define('FM_XOPAT_URL', "http://localhost:8080/xopat/index.php");
+
+// Slide-protocol keys passed to xOpat v3. Each value must be a key registered
+// in xopat's env.json under core.client.<active>.slide_protocols. xOpat v3
+// rejects inline protocol templates in secure mode — only registry keys work.
+// The plain-image key must point to a factory-style entry registered in xopat
+// (URL-template entries cannot express a plain HTML image source).
+define('FM_XOPAT_BACKGROUND_PROTOCOL',    'wsi_service');
+define('FM_XOPAT_VISUALIZATION_PROTOCOL', 'wsi_service');
+define('FM_XOPAT_PLAIN_IMAGE_PROTOCOL',   'plain_image');
 
 // Default language
 define('FM_LANG', 'en');

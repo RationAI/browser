@@ -666,12 +666,14 @@ EOF;
                 }
 
 
+                $bg_proto = FM_XOPAT_BACKGROUND_PROTOCOL;
+                $lay_proto = FM_XOPAT_VISUALIZATION_PROTOCOL;
                 if (FM_ADVANCED_MODE) {
-                    $actions.="<a onclick=\"viewerConfig.bgProto('$empaia_background_protocol').setPlainWSI('$full_wsi_empaia_path');\" class='pointer'>Add as background.</a>
-<a onclick=\"viewerConfig.layerProto('$empaia_layer_protocol').setShaderFor('$full_wsi_empaia_path', 'heatmap', 'empaia');\" class='pointer'>Add as layer.</a>";
+                    $actions.="<a onclick=\"viewerConfig.bgProto('$bg_proto').setPlainWSI('$full_wsi_empaia_path');\" class='pointer'>Add as background.</a>
+<a onclick=\"viewerConfig.layerProto('$lay_proto').setShaderFor('$full_wsi_empaia_path', 'heatmap', 'empaia');\" class='pointer'>Add as layer.</a>";
                 }
 
-                $title_tags = "onclick=\"viewerConfig.withNewTab(false).bgProto('$empaia_background_protocol').go('".FM_USER_ID."', '$fname', '$full_wsi_empaia_path');\" class=\"pointer\"";
+                $title_tags = "onclick=\"viewerConfig.withNewTab(false).bgProto('$bg_proto').go('".FM_USER_ID."', '$fname', '$full_wsi_empaia_path');\" class=\"pointer\"";
                 $title_prefix = "$title_prefix<i class='xopat'>&#xe802;</i>";
             } else if ($is_plain_image) {
                 $img = $is_link ? 'fa fa-file-text-o' : fm_get_file_icon_class($fname);
@@ -804,6 +806,9 @@ EOF;
             tiffPreviewMaker: dziImagePreviewMaker,
             importerMetaEndpoint: <?php echo FM_WSI_IMPORTER_API ? ("'" . FM_WSI_IMPORTER_API . "'") : "undefined"; ?>,
             urlRoot: '<?php echo $browser_relative_root ?>',
+            backgroundProtocol: '<?php echo FM_XOPAT_BACKGROUND_PROTOCOL; ?>',
+            visualizationProtocol: '<?php echo FM_XOPAT_VISUALIZATION_PROTOCOL; ?>',
+            plainImageProtocol: '<?php echo FM_XOPAT_PLAIN_IMAGE_PROTOCOL; ?>',
             data: `<?php echo $_POST['viewer-config'] ?? ''; ?>`,
         }, '<?php echo FM_XOPAT_SOURCES; ?>');
 

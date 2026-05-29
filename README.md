@@ -3,6 +3,8 @@ PHP File Manager
 
 Simple browser able to configure xOpat and provide its own REST API connectors (not enforced by the viewer).
 
+Targets **xOpat v3**. Slide-protocol values sent in the session JSON are now string keys that must be registered on the viewer side in `env.json` (`core.client.<active>.slide_protocols`); see the xopat `INTEGRATION.md` §3. Configure the keys via `FM_XOPAT_BACKGROUND_PROTOCOL`, `FM_XOPAT_VISUALIZATION_PROTOCOL`, and `FM_XOPAT_PLAIN_IMAGE_PROTOCOL`.
+
 ### :loudspeaker: Features 
 
 [//]: # (<ul>)
