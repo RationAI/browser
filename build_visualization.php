@@ -105,8 +105,11 @@ $js_path = _FM_JS_PATH;
 $user_id = FM_USER_ID;
 $wsi_meta_api = FM_WSI_IMPORTER_API;
 $wsi_meta_api = $wsi_meta_api ? "'{$wsi_meta_api}'" : "undefined";
-$bg_proto = FM_XOPAT_BACKGROUND_PROTOCOL;
-$lay_proto = FM_XOPAT_VISUALIZATION_PROTOCOL;
+// build_visualization.php is reachable only from the tiff (IIP) branch of
+// inc/files.php, so both the base tissue and the shader layers use the
+// IIP protocol. Plain-image key is still forwarded so plain-image detection
+// works in the configurator UI.
+$iip_proto = FM_XOPAT_IIP_PROTOCOL;
 $plain_proto = FM_XOPAT_PLAIN_IMAGE_PROTOCOL;
 global $browser_relative_root;
 echo <<<EOF
@@ -125,25 +128,23 @@ echo <<<EOF
         viewerUrl: '$viewer_url',
         importerMetaEndpoint: $wsi_meta_api,
         urlRoot: '$browser_relative_root',
-        backgroundProtocol: '$bg_proto',
-        visualizationProtocol: '$lay_proto',
         plainImageProtocol: '$plain_proto',
         data: '',
    });
-   
-   viewerConfig.setPlainWSI(tissuePath);
-   
+
+   viewerConfig.bgProto('$iip_proto').setPlainWSI(tissuePath);
+
    let run = false;
    for (let goal of data) {
        if (goal.length < 1) continue;
        //just first set visualised for now, config cannot handle multiple :/
        for (let key in goal) {
            const spec = goal[key];
-           viewerConfig.setShaderFor(spec.file, spec.default);
+           viewerConfig.layerProto('$iip_proto').setShaderFor(spec.file, spec.default);
        }
        run = true;
        viewerConfig.open();
-       break; 
+       break;
    }
 
    if (!run) viewerConfig.open();

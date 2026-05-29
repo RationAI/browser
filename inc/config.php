@@ -32,8 +32,16 @@ if (defined('FM_DEBUG') && FM_DEBUG) {
 defined('FM_XOPAT_URL') || define('FM_XOPAT_URL', "index.php");
 
 // Slide-protocol keys passed to xOpat v3. Each must be a key registered in
-// xopat's env.json under core.client.<active>.slide_protocols. xOpat v3 rejects
-// inline protocol templates in secure mode — only registry keys are accepted.
+// xopat's env.json under core.client.<active>.slide_protocols (or by a plugin
+// via window.SLIDE_PROTOCOLS.register). xOpat v3 rejects inline protocol
+// templates in secure mode — only registry keys are accepted.
+//
+// Assignment by file kind:
+//  - .tif / .tiff (IIP-served pyramidal tiffs)        → FM_XOPAT_IIP_PROTOCOL
+//  - other WSI formats (.mrxs, .svs, .ndpi, .dcm, …)  → FM_XOPAT_BACKGROUND_PROTOCOL
+//                                                       / FM_XOPAT_VISUALIZATION_PROTOCOL
+//  - plain images (.png, .jpg, .jpeg)                 → FM_XOPAT_PLAIN_IMAGE_PROTOCOL
+defined('FM_XOPAT_IIP_PROTOCOL')           || define('FM_XOPAT_IIP_PROTOCOL',           'iipimage');
 defined('FM_XOPAT_BACKGROUND_PROTOCOL')    || define('FM_XOPAT_BACKGROUND_PROTOCOL',    'wsi_service');
 defined('FM_XOPAT_VISUALIZATION_PROTOCOL') || define('FM_XOPAT_VISUALIZATION_PROTOCOL', 'wsi_service');
 defined('FM_XOPAT_PLAIN_IMAGE_PROTOCOL')   || define('FM_XOPAT_PLAIN_IMAGE_PROTOCOL',   'plain_image');

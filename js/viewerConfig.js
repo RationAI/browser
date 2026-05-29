@@ -63,21 +63,19 @@ form.submit();
 class ViewerConfig {
 
     constructor(props) {
-        // xOpat v3 protocol keys — must be registered in xopat env.json slide_protocols.
+        // xOpat v3 plain-image protocol key — must be registered in xopat env.json
+        // slide_protocols. WSI background/visualization protocols are set per-call via
+        // bgProto()/layerProto(); when neither is supplied, no `protocol` is written to
+        // the data entry and xopat falls back to its default_*_protocol from env.json.
         this.plainImageProtocol = props.plainImageProtocol || null;
-        this.bgProtocol = props.backgroundProtocol || null;
-        this.layerProtocol = props.visualizationProtocol || null;
+        // When a data entry carries this protocol key, its layer/background
+        // thumbnail in the viz builder is rendered via props.wsiPreviewMaker
+        // (WSI service); otherwise via props.tiffPreviewMaker (IIP/DZI).
+        this.wsiPreviewProtocol = props.wsiPreviewProtocol || null;
 
         this.props = props;
         this._dataCountMap = {};
         this.props.data = this.props.data || {};
-        this.imagePreviewMaker = (file) => {
-            //todo support for playin images? now only image server
-            // if (typeof file === "string" && file.endsWith(".tif")) {
-            //     return this.props.tiffPreviewMaker?.(file);
-            // }
-            return this.props.tiffPreviewMaker?.(file) || file;
-        }
         this.visible = false;
         this.hasVisualOutput = false;
         if (this.props.containerId) {
@@ -85,8 +83,8 @@ class ViewerConfig {
             this.hasVisualOutput = true;
         }
 
-        this._layproto = this.layerProtocol;
-        this._bgproto = this.bgProtocol;
+        this._layproto = null;
+        this._bgproto = null;
 
         this.initHiddenForm();
 
@@ -217,15 +215,21 @@ class ViewerConfig {
     }
 
     // Override the background protocol with a registered xOpat v3 protocol key.
-    // Passing null/empty restores the constructor default (props.backgroundProtocol).
+    // No call (or a falsy arg) leaves the protocol unset on the data entry, so
+    // xopat falls back to default_background_protocol from env.json.
     bgProto(proto = null) {
-        this._bgproto = proto || this.bgProtocol;
+        if (proto) {
+            this._bgproto = proto;
+        }
         return this;
     }
 
     // Override the visualization-layer protocol with a registered xOpat v3 protocol key.
+    // No call leaves the protocol unset → xopat uses default_visualization_protocol.
     layerProto(proto = null) {
-        this._layproto = proto || this.layerProtocol;
+        if (proto) {
+            this._layproto = proto;
+        }
         return this;
     }
 
@@ -561,6 +565,30 @@ class ViewerConfig {
         return typeof entry === "string" ? entry : entry?.dataID;
     }
 
+    _protocolOf(dataPath) {
+        const dataList = this.props.data.data;
+        if (!dataList) return null;
+        const idx = this._findDataIndex(dataList, dataPath);
+        if (idx === -1) return null;
+        const entry = dataList[idx];
+        return typeof entry === "object" ? (entry?.protocol || null) : null;
+    }
+
+    // Pick the thumbnail URL for the viz builder. Plain images render their own
+    // path; data entries tagged with the WSI-service protocol go through
+    // wsiPreviewMaker; everything else (default: IIP/DZI tiffs) goes through
+    // tiffPreviewMaker. Falls back to the raw path if no matching maker exists.
+    _previewUrlFor(dataPath) {
+        const protocol = this._protocolOf(dataPath);
+        if (this.plainImageProtocol && protocol === this.plainImageProtocol) {
+            return dataPath;
+        }
+        if (this.wsiPreviewProtocol && protocol === this.wsiPreviewProtocol) {
+            return this.props.wsiPreviewMaker?.(dataPath) || dataPath;
+        }
+        return this.props.tiffPreviewMaker?.(dataPath) || dataPath;
+    }
+
     _findDataIndex(dataList, dataPath) {
         for (let i = 0; i < dataList.length; i++) {
             const e = dataList[i];
@@ -655,7 +683,7 @@ class ViewerConfig {
         if (!this.hasVisualOutput) return;
         let filename = tissuePath.split("/");
         filename = filename[filename.length - 1];
-        this._setRenderBackground(filename, this.imagePreviewMaker(tissuePath));
+        this._setRenderBackground(filename, this._previewUrlFor(tissuePath));
     }
 
     _setRenderPlainImage(imageRelPath) {
@@ -684,7 +712,7 @@ background: linear-gradient(0deg, var(--color-bg-primary) 0%, transparent 100%);
             {type: 'identity', title: 'Identity'},
         ].map(x => `<option name="shader-type" value="${x.type}">${x.title}</option>`);
 
-        let imageUrl = this.isPlainImageOverlay ? dataPath : this.imagePreviewMaker(dataPath);
+        let imageUrl = this._previewUrlFor(dataPath);
         let newElem = document.createElement('div');
         newElem.dataset.source = dataPath;
         let filename = dataPath.split("/");

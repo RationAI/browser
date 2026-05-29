@@ -42,10 +42,19 @@ $GLOBALS['exclude_folders'] = array(
 define('FM_XOPAT_URL', "http://localhost:8080/xopat/index.php");
 
 // Slide-protocol keys passed to xOpat v3. Each value must be a key registered
-// in xopat's env.json under core.client.<active>.slide_protocols. xOpat v3
-// rejects inline protocol templates in secure mode — only registry keys work.
+// in xopat's env.json under core.client.<active>.slide_protocols (or by a
+// plugin via window.SLIDE_PROTOCOLS.register). xOpat v3 rejects inline
+// protocol templates in secure mode — only registry keys work.
+//
+// File-kind routing:
+//   .tif / .tiff (IIP-served pyramidal tiffs)        → FM_XOPAT_IIP_PROTOCOL
+//   other WSI formats (.mrxs, .svs, .ndpi, .dcm, …)  → FM_XOPAT_BACKGROUND_PROTOCOL
+//                                                      / FM_XOPAT_VISUALIZATION_PROTOCOL
+//   plain images (.png, .jpg, .jpeg)                 → FM_XOPAT_PLAIN_IMAGE_PROTOCOL
+//
 // The plain-image key must point to a factory-style entry registered in xopat
 // (URL-template entries cannot express a plain HTML image source).
+define('FM_XOPAT_IIP_PROTOCOL',           'iipimage');
 define('FM_XOPAT_BACKGROUND_PROTOCOL',    'wsi_service');
 define('FM_XOPAT_VISUALIZATION_PROTOCOL', 'wsi_service');
 define('FM_XOPAT_PLAIN_IMAGE_PROTOCOL',   'plain_image');

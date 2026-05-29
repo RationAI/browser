@@ -601,22 +601,23 @@ EOF;
                 }
 
 
+                $iip_proto = FM_XOPAT_IIP_PROTOCOL;
                 if (FM_ADVANCED_MODE) {
-                    $actions.="<button type='button' class='pointer btn btn-sm' onclick=\"viewerConfig.setPlainWSI('$full_wsi_path');\" class='pointer'>+ as background</button>
-<button type='button' class='pointer btn btn-sm' onclick=\"viewerConfig.setShaderFor('$full_wsi_path');\" class='pointer'>+ as layer</button>";
+                    $actions.="<button type='button' class='pointer btn btn-sm' onclick=\"viewerConfig.bgProto('$iip_proto').setPlainWSI('$full_wsi_path');\" class='pointer'>+ as background</button>
+<button type='button' class='pointer btn btn-sm' onclick=\"viewerConfig.layerProto('$iip_proto').setShaderFor('$full_wsi_path');\" class='pointer'>+ as layer</button>";
                 }
 
                 //add href too to enable visited link coloring, trick browser into thinking we visited HREF
                 $user = FM_USER_ID;
                 $title_tags = <<<EOF
 href="$full_wsi_path" class="pointer" onclick="
-event.preventDefault(); 
+event.preventDefault();
 if (history.replaceState) {
     const current_url = window.location.href;
     history.replaceState({},'','$full_wsi_path');
     history.replaceState({},'',current_url);
 }
-viewerConfig.withNewTab(true).go('$user', '$fname', '$full_wsi_path');" 
+viewerConfig.withNewTab(true).bgProto('$iip_proto').go('$user', '$fname', '$full_wsi_path');"
 EOF;
                 $title_prefix = "$title_prefix<i class='xopat'>&#xe802;</i>";
             } else if (in_array($ext, array("bif", "dcm", "isyntax", "mrxs", "ndpi", "btf", "tf2", "tf8", "scn", "svs", "tif", "tiff", "czi", "vsf"))) {
@@ -785,29 +786,32 @@ EOF;
 </div>
 <script type="text/javascript">
     (function (window){
-        let splitUrlMaker = ('<?php echo $image_preview_url_maker("$$%%[[==]]%%$$"); ?>').split('$$%%[[==]]%%$$');
-        window.dziImagePreviewMaker = function (file) {
-            let res = [splitUrlMaker[0]], i = 1;
-            while( i < splitUrlMaker.length ) {
-                res.push(file);
-                res.push(splitUrlMaker[i++]); //suffix
-                if (i >= splitUrlMaker.length) {
-                    break;
+        function makePreviewSplicer(splits) {
+            return function (file) {
+                let res = [splits[0]], i = 1;
+                while (i < splits.length) {
+                    res.push(file);
+                    res.push(splits[i++]); //suffix
+                    if (i >= splits.length) break;
+                    res.push(splits[i++]); //prefix of the next occurrence
                 }
-                res.push(splitUrlMaker[i++]); //prefix of the next occurrence
-            }
-            return res.join('');
-        };
+                return res.join('');
+            };
+        }
+        let iipSplits = ('<?php echo $image_preview_url_maker("$$%%[[==]]%%$$"); ?>').split('$$%%[[==]]%%$$');
+        let wsiSplits = ('<?php echo $image_preview_url_maker_empaia("$$%%[[==]]%%$$"); ?>').split('$$%%[[==]]%%$$');
+        window.dziImagePreviewMaker = makePreviewSplicer(iipSplits);
+        window.wsiImagePreviewMaker = makePreviewSplicer(wsiSplits);
 
         window.viewerConfig = new ViewerConfig({
             windowName: 'viewerConfig',
             viewerUrl: '<?php echo FM_XOPAT_URL; ?>',
             containerId: '<?php echo FM_ADVANCED_MODE ? "viewer-configurator" : "" ?>',
             tiffPreviewMaker: dziImagePreviewMaker,
+            wsiPreviewMaker: wsiImagePreviewMaker,
+            wsiPreviewProtocol: '<?php echo FM_XOPAT_BACKGROUND_PROTOCOL; ?>',
             importerMetaEndpoint: <?php echo FM_WSI_IMPORTER_API ? ("'" . FM_WSI_IMPORTER_API . "'") : "undefined"; ?>,
             urlRoot: '<?php echo $browser_relative_root ?>',
-            backgroundProtocol: '<?php echo FM_XOPAT_BACKGROUND_PROTOCOL; ?>',
-            visualizationProtocol: '<?php echo FM_XOPAT_VISUALIZATION_PROTOCOL; ?>',
             plainImageProtocol: '<?php echo FM_XOPAT_PLAIN_IMAGE_PROTOCOL; ?>',
             data: `<?php echo $_POST['viewer-config'] ?? ''; ?>`,
         });
