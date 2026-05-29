@@ -810,7 +810,7 @@ EOF;
             visualizationProtocol: '<?php echo FM_XOPAT_VISUALIZATION_PROTOCOL; ?>',
             plainImageProtocol: '<?php echo FM_XOPAT_PLAIN_IMAGE_PROTOCOL; ?>',
             data: `<?php echo $_POST['viewer-config'] ?? ''; ?>`,
-        }, '<?php echo FM_XOPAT_SOURCES; ?>');
+        });
 
         document.getElementById('file-browser-form').addEventListener('submit', () => {
             document.getElementById('viewer-config').value = viewerConfig.export();

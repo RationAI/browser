@@ -94,9 +94,6 @@ defined('FM_WSI_ANALYSIS_PAGE') || define('FM_WSI_ANALYSIS_PAGE', false);
 //todo in future, do not remove the script name, enter only server path and add scripts manually
 define ('FM_WSI_IMPORTER_API', FM_WSI_ANALYSIS_PAGE ? (dirname(FM_WSI_ANALYSIS_PAGE) . "/public/index.php") : false);
 
-//Relative or absolute path to the viewer source src folder. Only required for shader configurator.
-defined('FM_XOPAT_SOURCES') || define('FM_XOPAT_SOURCES', 'user_setup.php');
-
 // Path to the database repository root relative to this repository
 defined('FM_XO_DB_ROOT') || define('FM_XO_DB_ROOT', "../xo_db/");
 

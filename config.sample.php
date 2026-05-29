@@ -94,9 +94,6 @@ define('FM_EXTENSION', '');
 //Path to the analysis enpoint, set as false if you don't know
 define('FM_WSI_ANALYSIS_PAGE', "http://localhost:8081/importer/server/analysis.php");
 
-//Relative or absolute path to the viewer source src folder. Only required for shader configurator.
-define('FM_XOPAT_SOURCES', 'http://localhost:8080/xopat/user_setup.php');
-
 // Path to the database repository root
 define('XO_DB_ROOT', "../xo_db/");
 */

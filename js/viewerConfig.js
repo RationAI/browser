@@ -62,7 +62,7 @@ form.submit();
 
 class ViewerConfig {
 
-    constructor(props, interactiveShaderConfigUrl) {
+    constructor(props) {
         // xOpat v3 protocol keys — must be registered in xopat env.json slide_protocols.
         this.plainImageProtocol = props.plainImageProtocol || null;
         this.bgProtocol = props.backgroundProtocol || null;
@@ -78,7 +78,6 @@ class ViewerConfig {
             // }
             return this.props.tiffPreviewMaker?.(file) || file;
         }
-        this.interactiveShaderConfigUrl = interactiveShaderConfigUrl;
         this.visible = false;
         this.hasVisualOutput = false;
         if (this.props.containerId) {
@@ -674,40 +673,6 @@ background: linear-gradient(0deg, var(--color-bg-primary) 0%, transparent 100%);
 `;
     }
 
-    _openExternalConfigurator(shaderId) {
-        const theWindow = window.open(this.interactiveShaderConfigUrl,
-                'config', "height=550,width=850"),
-            theDoc = theWindow.document;
-        //    theScript = document.createElement('script');
-
-        // const selfRef = this.props.windowName;
-        // function injected() {
-        //     window.opener[`${selfRef}`]
-        // }
-        // theScript.innerHTML = 'window.onload = ' + injected.toString() + ';';
-        // theDoc.body.appendChild(theScript);
-
-        const _this = this;
-        theWindow.onload = function () {
-            theWindow.runConfigurator(config => {
-                _this._recordExternalConfig(shaderId, config);
-                window.console.log(config);
-                theWindow.close();
-            });
-        };
-    }
-
-    _recordExternalConfig(shaderId, config) {
-        //todo unsafe assignments?
-        const vis = this._ensureVisExists();
-        const shader = vis.shaders[shaderId];
-        if (shader) {
-            config.dataReferences = shader.dataReferences;
-        }
-        vis.shaders[shaderId] = config;
-        document.getElementById('viewer-config-shader-select-'+shaderId).value = config.type;
-    }
-
     _addLayerToDOM(uid, dataPath, isPlainImage) {
         if (!this.hasVisualOutput) return;
 
@@ -732,7 +697,6 @@ background: linear-gradient(0deg, var(--color-bg-primary) 0%, transparent 100%);
 <h4 class="position-absolute bottom-0 f4-light mx-3 my-2 no-wrap overflow-hidden">${filename}</h4>
 <select class="viewer-config-shader-select position-absolute top-4 right-0" id="viewer-config-shader-select-${uid}"
 onchange="${this.props.windowName}.changeLayerConfigFor('${uid}', this.value);">${shaderOpts}</select>
-<button class="btn btn-sm position-absolute top-0 right-0" onclick="${this.props.windowName}._openExternalConfigurator('${uid}')">Configure shader</button>
 `;
         document.getElementById('viewer-config-shader-setup').appendChild(newElem);
     }
